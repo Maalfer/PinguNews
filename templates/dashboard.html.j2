@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel — Ciberseguridad &amp; IT</title>
+<title>PinguNews</title>
 {% include "_favicon.html.j2" %}
 {% include "_estilos.html.j2" %}
 </head>
 <body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% import "_macros.html.j2" as m %}
 
   <header class="top">
@@ -15,24 +16,25 @@
       <div class="brand-fila">
         <div class="brand">
           <img class="logo" src="/static/logo.png" alt="" width="40" height="40">
-          <h1>Panel de ciberseguridad &amp; IT</h1>
-          <span class="subtitulo">España · resumen de los últimos días</span>
+          <h1>PinguNews</h1>
         </div>
         {{ m.auth_area(usuario, csrf_token) }}
       </div>
-      <p class="estado">
+      <p class="estado" role="status">
         {% if ultima_recoleccion %}Última recolección: {{ ultima_recoleccion }}{% else %}Todavía no se ha recolectado nada — pulsa "Actualizar ahora".{% endif %}
+        <span class="separador" aria-hidden="true">·</span>
+        <strong>{{ total_items }}</strong> ítems en este rango
       </p>
 
       <div class="panel-controles">
-        <div class="grupo-control">
+        <div class="grupo-control grupo-rango">
           <span class="grupo-control-titulo" id="titulo-rango">Rango de fechas</span>
           <div class="fila-rango">
             <nav class="dias-selector" aria-labelledby="titulo-rango">
               <ul>
                 {% for opcion in opciones_dias %}
                 <li>
-                  <a href="?dias={{ opcion }}{{ categorias_qs }}" {{ 'aria-current="true"' if opcion == dias else '' }}>
+                  <a href="?dias={{ opcion }}{{ categorias_qs }}"{% if opcion == dias %} aria-current="page"{% endif %}>
                     {{ opcion }}d
                   </a>
                 </li>
@@ -46,61 +48,130 @@
           </div>
         </div>
 
-        <details class="grupo-control grupo-control--plegable">
-          <summary class="grupo-control-titulo">
-            Categorías a mostrar
-            <span class="resumen-seleccion">— {{ categorias_activas | length }} de {{ categorias_disponibles | length }} seleccionadas</span>
-          </summary>
-          <form method="get" action="/" class="contenido-plegable">
-            <fieldset>
-              <legend class="sr-only">Elige qué categorías mostrar</legend>
-              <input type="hidden" name="dias" value="{{ dias }}">
-              <ul class="lista-categorias">
-                {% for cat, label in categorias_disponibles %}
-                <li>
-                  <label class="chip">
-                    <input type="checkbox" name="categorias" value="{{ cat }}" {{ 'checked' if cat in categorias_activas else '' }}>
-                    {{ label }}
-                  </label>
-                </li>
-                {% endfor %}
-              </ul>
-              <div class="fila-aplicar">
-                <button class="btn btn-primario" type="submit">Aplicar filtros</button>
-              </div>
-            </fieldset>
-          </form>
-        </details>
-      </div>
+        <div class="grupo-control grupo-categorias">
+          <span class="grupo-control-titulo" id="titulo-cats">Categorías</span>
+          <details class="dropdown">
+            <summary class="btn-ghost dropdown-btn" aria-describedby="titulo-cats">
+              {{ categorias_activas | length }} de {{ categorias_disponibles | length }} seleccionadas
+            </summary>
+            <div class="dropdown-panel">
+              <form method="get" action="/">
+                <fieldset>
+                  <legend class="grupo-control-titulo">Elige qué categorías mostrar</legend>
+                  <input type="hidden" name="dias" value="{{ dias }}">
+                  <div class="fila-categorias">
+                    <ul class="lista-categorias">
+                      {% for cat, label in categorias_disponibles %}
+                      <li>
+                        <label class="chip" title="{{ label }}">
+                          <input type="checkbox" name="categorias" value="{{ cat }}" {{ 'checked' if cat in categorias_activas else '' }}>
+                          <span class="chip-txt">{{ label.split(' (')[0] }}</span>
+                          <span class="chip-n">{{ conteo_por_categoria.get(cat, 0) }}</span>
+                        </label>
+                      </li>
+                      {% endfor %}
+                    </ul>
+                    <div class="fila-aplicar">
+                      <button class="btn btn-primario" type="submit">Aplicar</button>
+                      <a class="btn-ghost" href="/?dias={{ dias }}">Ver todas</a>
+                    </div>
+                  </div>
+                </fieldset>
+              </form>
+            </div>
+          </details>
+        </div>
 
-      <dl class="resumen-stats">
-        <div><dt>Ítems en este rango</dt><dd>{{ total_items }}</dd></div>
-        {% for cat, label in categorias_disponibles %}
-        <div><dt>{{ label }}</dt><dd>{{ conteo_por_categoria.get(cat, 0) }}</dd></div>
-        {% endfor %}
-      </dl>
+        {% set f = frase_aleatoria() %}
+        <div class="grupo-control grupo-frase">
+          <button type="button" class="mascota" id="mascota" title="¡Haz clic!"
+                  aria-label="Pingüino mascota. Púlsalo para verlo hacer una animación">
+            <svg class="pingu hola idle" viewBox="0 0 200 250" width="124" height="155" aria-hidden="true" focusable="false">
+              <ellipse class="p-sombra" cx="100" cy="241" rx="58" ry="7"/>
+
+              <g class="p-todo">
+                <!-- pies -->
+                <g class="p-pies" fill="#f59e0b">
+                  <ellipse cx="76" cy="237" rx="19" ry="7"/>
+                  <ellipse cx="124" cy="237" rx="19" ry="7"/>
+                </g>
+
+                <g class="p-respira">
+                  <!-- cuerpo y pecho -->
+                  <path class="p-cuerpo" fill="#1f2937"
+                    d="M100 22 C132 22 148 46 146 74 C146 90 158 104 162 130 C168 170 164 204 150 222 C138 236 118 238 100 238 C82 238 62 236 50 222 C36 204 32 170 38 130 C42 104 54 90 54 74 C52 46 68 22 100 22 Z"/>
+                  <path fill="#ffffff"
+                    d="M100 84 C126 86 148 120 150 160 C152 200 140 226 100 230 C60 226 48 200 50 160 C52 120 74 86 100 84 Z"/>
+
+                  <!-- aletas -->
+                  <g class="p-fl-i">
+                    <path class="p-aleta" d="M50 112 C28 128 18 168 26 204 C28 211 35 209 39 202 C53 178 63 148 62 124 Z"/>
+                  </g>
+                  <g class="p-fl-d">
+                    <path class="p-aleta" d="M150 112 C172 128 182 168 174 204 C172 211 165 209 161 202 C147 178 137 148 138 124 Z"/>
+                  </g>
+
+                  <!-- cabeza -->
+                  <g class="p-cabeza">
+                    <g class="p-ojos"><g class="p-parpadeo">
+                      <ellipse cx="82" cy="62" rx="9" ry="10" fill="#fff"/>
+                      <ellipse cx="118" cy="62" rx="9" ry="10" fill="#fff"/>
+                      <g class="p-pupila">
+                        <circle cx="82" cy="63" r="4.6" fill="#0b0f16"/><circle cx="83.6" cy="61.2" r="1.5" fill="#fff"/>
+                        <circle cx="118" cy="63" r="4.6" fill="#0b0f16"/><circle cx="119.6" cy="61.2" r="1.5" fill="#fff"/>
+                      </g>
+                    </g></g>
+
+                    <g class="p-pico">
+                      <path class="p-pico-b" fill="#d97706" d="M92 90 Q100 98 108 90 Q106 100 100 102 Q94 100 92 90 Z"/>
+                      <path fill="#f59e0b" d="M88 76 Q100 69 112 76 Q108 91 100 97 Q92 91 88 76 Z"/>
+                    </g>
+                  </g>
+                </g>
+              </g>
+
+              <!-- efectos -->
+              <g transform="translate(84 18)"><path class="p-corazon c1" d="M0 -2 C-3 -8 -11 -5 -7 1 L0 9 L7 1 C11 -5 3 -8 0 -2 Z"/></g>
+              <g transform="translate(100 8)"><path class="p-corazon c2" d="M0 -2 C-3 -8 -11 -5 -7 1 L0 9 L7 1 C11 -5 3 -8 0 -2 Z"/></g>
+              <g transform="translate(118 20)"><path class="p-corazon c3" d="M0 -2 C-3 -8 -11 -5 -7 1 L0 9 L7 1 C11 -5 3 -8 0 -2 Z"/></g>
+              <text class="p-nota n1" x="150" y="46">&#9834;</text>
+              <text class="p-nota n2" x="34" y="36">&#9835;</text>
+            </svg>
+          </button>
+          <figure class="frase">
+            <blockquote><p>{{ f.texto }}</p></blockquote>
+            {% if f.autor %}<figcaption>{{ f.autor }}</figcaption>{% endif %}
+          </figure>
+        </div>
+      </div>
     </div>
   </header>
 
-  <div class="wrap">
+  <main class="wrap" id="contenido" tabindex="-1">
     {% if destacados %}
-    <section class="destacados" aria-labelledby="h-destacados">
-      <div class="cat-header">
-        <h2 id="h-destacados">🔥 Lo más comentado</h2>
-        <span class="cat-count">cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
-      </div>
-      {% for item in destacados %}{{ m.render_item(item, csrf_token) }}{% endfor %}
+    <section class="destacados">
+      <details class="cat-details" id="sec-destacados" open>
+        <summary class="cat-header">
+          <h2 id="h-destacados">🔥 Lo más comentado</h2>
+          <span class="cat-count">cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
+        </summary>
+        <div class="cat-body">
+          {% for item in destacados %}{{ m.render_item(item, csrf_token, 'd-') }}{% endfor %}
+        </div>
+      </details>
     </section>
     {% endif %}
 
     {% for cat, label in categorias_disponibles %}
     {% if cat in categorias_activas %}
-    <section class="categoria" aria-labelledby="h-{{ cat }}">
-      <div class="cat-header">
-        <span class="dot dot-{{ cat }}" aria-hidden="true"></span>
-        <h2 id="h-{{ cat }}">{{ label }}</h2>
-        <span class="cat-count">{{ conteo_por_categoria.get(cat, 0) }}</span>
-      </div>
+    <section class="categoria">
+      <details class="cat-details" id="sec-{{ cat }}">
+        <summary class="cat-header">
+          <span class="dot dot-{{ cat }}" aria-hidden="true"></span>
+          <h2 id="h-{{ cat }}">{{ label }}</h2>
+          <span class="cat-count">{{ conteo_por_categoria.get(cat, 0) }}</span>
+        </summary>
+        <div class="cat-body">
       {% if grupos.get(cat) %}
         {% for item in grupos[cat] %}{{ m.render_item(item, csrf_token) }}{% endfor %}
       {% elif conteo_por_categoria.get(cat, 0) > 0 %}
@@ -108,6 +179,8 @@
       {% else %}
         <p class="vacio">Sin ítems en este rango de días.</p>
       {% endif %}
+        </div>
+      </details>
     </section>
     {% endif %}
     {% endfor %}
@@ -129,12 +202,101 @@
       {% endif %}
     </nav>
     {% endif %}
-  </div>
+  </main>
 
   <footer class="bottom">
     <p>
       Panel generado localmente<span class="separador" aria-hidden="true">·</span>fuentes: RSS en español, RemoteOK, Jobicy{{ ", Twitter/X" if twitter_activo else "" }}<span class="separador" aria-hidden="true">·</span>sin servicios externos de pago
     </p>
   </footer>
+  <script>
+    /* Mejora progresiva: el desplegable de categorías se cierra al pulsar
+       fuera o con Escape (devolviendo el foco al botón). Sin JS sigue
+       funcionando como <details> nativo. */
+    (function () {
+      var d = document.querySelector("details.dropdown");
+      if (!d) return;
+      document.addEventListener("click", function (e) {
+        if (d.open && !d.contains(e.target)) d.open = false;
+      });
+      d.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && d.open) {
+          d.open = false;
+          d.querySelector("summary").focus();
+        }
+      });
+    })();
+  </script>
+  <script>
+    /* Recuerda qué secciones abriste mientras navegas (paginación, filtros).
+       Por defecto las categorías están cerradas. Sin JS funciona igual. */
+    (function () {
+      var K = "pingunews-secciones", guardado = {};
+      try { guardado = JSON.parse(sessionStorage.getItem(K) || "{}"); } catch (e) {}
+      document.querySelectorAll("details.cat-details").forEach(function (d) {
+        if (typeof guardado[d.id] === "boolean") d.open = guardado[d.id];
+        d.addEventListener("toggle", function () {
+          guardado[d.id] = d.open;
+          try { sessionStorage.setItem(K, JSON.stringify(guardado)); } catch (e) {}
+        });
+      });
+    })();
+  </script>
+  <script>
+    /* Mascota: al hacer clic hace una animación al azar (nunca repite la
+       anterior); los ojos siguen al cursor. Con "reducir movimiento" no se
+       anima nada: solo aparecen unos corazones estáticos. */
+    (function () {
+      var btn = document.getElementById("mascota");
+      if (!btn) return;
+      var svg = btn.querySelector(".pingu");
+      var reducir = window.matchMedia("(prefers-reduced-motion: reduce)");
+      var anims = [["a-salto", 1150], ["a-giro", 1550], ["a-baile", 1950], ["a-saludo", 2150],
+                   ["a-aleteo", 1550], ["a-sorpresa", 1550], ["a-cosquillas", 1450], ["a-corazones", 2400]];
+      var todas = anims.map(function (a) { return a[0]; }).concat(["a-feliz"]);
+      var ultima = -1, t = null, tIdle = null;
+
+      function limpiar() { todas.forEach(function (c) { svg.classList.remove(c); }); }
+      function reposo() { svg.classList.add("idle"); }
+
+      /* el saludo de bienvenida solo se anima al entrar */
+      setTimeout(function () { svg.classList.remove("hola"); }, 4000);
+      /* la respiración/parpadeo son finitos (~25 s) y luego se quedan quietos */
+      tIdle = setTimeout(function () { svg.classList.remove("idle"); }, 26000);
+
+      btn.addEventListener("click", function () {
+        clearTimeout(t); clearTimeout(tIdle);
+        svg.classList.remove("hola", "idle"); limpiar();
+        if (reducir.matches) {
+          svg.classList.add("a-feliz");
+          t = setTimeout(limpiar, 2000);
+          return;
+        }
+        var i;
+        do { i = Math.floor(Math.random() * anims.length); } while (i === ultima);
+        ultima = i;
+        void svg.getBoundingClientRect();           /* reinicia la animación */
+        svg.classList.add(anims[i][0]);
+        t = setTimeout(function () { limpiar(); reposo(); tIdle = setTimeout(function () { svg.classList.remove("idle"); }, 15000); }, anims[i][1]);
+      });
+
+      /* ojos que siguen al cursor */
+      if (!reducir.matches) {
+        var px = 0, py = 0, raf = 0;
+        function seguir() {
+          raf = 0;
+          var r = svg.getBoundingClientRect();
+          var cx = r.left + r.width / 2, cy = r.top + r.height * 0.26;
+          var dx = px - cx, dy = py - cy, d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260);
+          svg.style.setProperty("--ox", (dx / d * 3.2 * k).toFixed(2) + "px");
+          svg.style.setProperty("--oy", (dy / d * 2.6 * k).toFixed(2) + "px");
+        }
+        document.addEventListener("pointermove", function (e) {
+          px = e.clientX; py = e.clientY;
+          if (!raf) raf = requestAnimationFrame(seguir);
+        }, { passive: true });
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -3,20 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Iniciar sesión — Panel de ciberseguridad &amp; IT</title>
+<title>Iniciar sesión — PinguNews</title>
 {% include "_favicon.html.j2" %}
 {% include "_estilos.html.j2" %}
 </head>
 <body>
+  <main class="auth-main" id="contenido">
   <div class="auth-card">
-    <div class="auth-logo"><img src="/static/logo.png" alt="Panel de ciberseguridad &amp; IT" width="72" height="72"></div>
+    <div class="auth-logo"><img src="/static/logo.png" alt="PinguNews" width="72" height="72"></div>
     <h1>Iniciar sesión</h1>
     {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
     <form method="post" action="/login">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="campo">
         <label for="nombre_usuario">Usuario</label>
-        <input type="text" id="nombre_usuario" name="nombre_usuario" autocomplete="username" required autofocus>
+        <input type="text" id="nombre_usuario" name="nombre_usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
       </div>
       <div class="campo">
         <label for="password">Contraseña</label>
@@ -26,5 +27,10 @@
     </form>
     <p class="auth-enlace">¿No tienes cuenta? <a href="/registro">Crear una</a></p>
   </div>
+  <p class="auth-volver"><a class="btn-ghost" href="/">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+    Volver al panel
+  </a></p>
+</main>
 </body>
 </html>

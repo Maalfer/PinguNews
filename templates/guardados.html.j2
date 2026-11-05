@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mis guardados — Panel de ciberseguridad &amp; IT</title>
+<title>Mis guardados — PinguNews</title>
 {% include "_favicon.html.j2" %}
 {% include "_estilos.html.j2" %}
 </head>
 <body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% import "_macros.html.j2" as m %}
 
   <header class="top">
@@ -20,17 +21,22 @@
         </div>
         {{ m.auth_area(usuario, csrf_token) }}
       </div>
-      <p class="estado"><a href="/">← Volver al panel</a></p>
+      <div class="volver-wrap"><a class="btn-ghost btn-volver" href="/">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Volver al panel
+      </a></div>
     </div>
   </header>
 
-  <div class="wrap">
+  <main class="wrap" id="contenido" tabindex="-1">
     {% if items %}
-      {% for item in items %}{{ m.render_item(item, csrf_token) }}{% endfor %}
+      <div class="cat-body">
+        {% for item in items %}{{ m.render_item(item, csrf_token) }}{% endfor %}
+      </div>
     {% else %}
       <p class="vacio">Todavía no has guardado ningún ítem. Pulsa "📑 Guardar" en cualquier noticia del panel para que aparezca aquí.</p>
     {% endif %}
-  </div>
+  </main>
 
   <footer class="bottom">
     <p>Panel generado localmente<span class="separador" aria-hidden="true">·</span>tus guardados son privados, solo los ves tú</p>

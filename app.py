@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import secrets
 import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import yaml
 from fastapi import FastAPI, Form, Query
@@ -27,6 +28,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
 import auth
+from frases import frase_aleatoria
 import csrf
 from classifier import CATEGORIA_LABELS, CATEGORIA_ORDEN
 from collector import ejecutar_recoleccion
@@ -63,6 +65,7 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # usuario, sin esto cualquier feed o usuario podría inyectar HTML/JS
 # (XSS) en cada página del panel. Se fuerza explícitamente a True.
 templates.env.autoescape = True
+templates.env.globals["frase_aleatoria"] = frase_aleatoria
 
 app = FastAPI(title="Panel de ciberseguridad e IT")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -172,11 +175,20 @@ def _enriquecer_items(items: List[dict], usuario: Optional[dict]) -> None:
         item["le_gusta"] = item["hash"] in likes_usuario
 
 
-def _destino_tras_accion(request: Request) -> str:
+def _destino_tras_accion(request: Request, item_hash: str = "") -> str:
     """A dónde volver tras guardar/dar like: la misma página desde la que se
-    pulsó el botón (usa el Referer; si no hay, vuelve al panel)."""
-    referer = request.headers.get("referer")
-    return referer or "/"
+    pulsó el botón. Solo se aceptan rutas de ESTE sitio (el Referer lo manda el
+    navegador, pero no se redirige a hosts externos) y se añade un ancla a la
+    noticia para no perder la posición de lectura."""
+    destino = "/"
+    referer = request.headers.get("referer") or ""
+    if referer:
+        u = urlparse(referer)
+        if u.netloc == request.headers.get("host", "") and u.path.startswith("/") and not u.path.startswith("//"):
+            destino = u.path + (f"?{u.query}" if u.query else "")
+    if item_hash and re.fullmatch(r"[A-Za-z0-9_-]{1,128}", item_hash):
+        destino += f"#item-{item_hash}"
+    return destino
 
 
 def _render_dashboard(
@@ -400,7 +412,7 @@ def alternar_guardado(request: Request, item_hash: str, csrf_token: str = Form(.
         return RedirectResponse("/login", status_code=303)
     csrf.exigir_csrf(request, csrf_token)
     db.alternar_guardado(usuario["id"], item_hash)
-    return RedirectResponse(_destino_tras_accion(request), status_code=303)
+    return RedirectResponse(_destino_tras_accion(request, item_hash), status_code=303)
 
 
 @app.post("/like/{item_hash}")
@@ -410,7 +422,7 @@ def alternar_like(request: Request, item_hash: str, csrf_token: str = Form(...))
         return RedirectResponse("/login", status_code=303)
     csrf.exigir_csrf(request, csrf_token)
     db.alternar_like(usuario["id"], item_hash)
-    return RedirectResponse(_destino_tras_accion(request), status_code=303)
+    return RedirectResponse(_destino_tras_accion(request, item_hash), status_code=303)
 
 
 @app.get("/guardados", response_class=HTMLResponse)
