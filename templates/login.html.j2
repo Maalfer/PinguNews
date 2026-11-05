@@ -7,30 +7,51 @@
 {% include "_favicon.html.j2" %}
 {% include "_estilos.html.j2" %}
 </head>
-<body>
+<body class="auth-body">
+  {% import "_macros.html.j2" as m %}
   <main class="auth-main" id="contenido">
-  <div class="auth-card">
-    <div class="auth-logo"><img src="/static/logo.png" alt="PinguNews" width="72" height="72"></div>
-    <h1>Iniciar sesión</h1>
-    {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
-    <form method="post" action="/login">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="auth-escena">
+      <div class="auth-pingu" aria-hidden="true">{{ m.pingu(116) }}</div>
+
+      <div class="auth-card">
+        <p class="auth-marca">PinguNews</p>
+        <h1>Bienvenido de nuevo</h1>
+        <p class="auth-sub">Entra para guardar noticias y darles me gusta.</p>
+
+        {% if error %}<p class="auth-error" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span>{{ error }}</span></p>{% endif %}
+
+        <form method="post" action="/login">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="campo">
         <label for="nombre_usuario">Usuario</label>
-        <input type="text" id="nombre_usuario" name="nombre_usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+        <div class="campo-caja">
+          <svg class="campo-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          <input type="text" id="nombre_usuario" name="nombre_usuario" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus>
+        </div>
       </div>
       <div class="campo">
         <label for="password">Contraseña</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required>
+        <div class="campo-caja">
+          <svg class="campo-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>
+          <input type="password" id="password" name="password" data-pw autocomplete="current-password" required>
+          <button type="button" class="btn-ojo" data-for="password" data-nombre="contraseña" hidden aria-pressed="false" aria-label="Mostrar contraseña"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primario">Entrar</button>
-    </form>
-    <p class="auth-enlace">¿No tienes cuenta? <a href="/registro">Crear una</a></p>
-  </div>
-  <p class="auth-volver"><a class="btn-ghost" href="/">
-    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-    Volver al panel
-  </a></p>
-</main>
+          <button type="submit" class="btn btn-primario btn-grande">Entrar</button>
+        </form>
+
+        <div class="auth-separador" aria-hidden="true"><span>o</span></div>
+        <p class="auth-enlace">¿Todavía no tienes cuenta?</p>
+        <a class="btn-ghost btn-bloque" href="/registro">Crear una cuenta</a>
+      </div>
+
+      <p class="auth-volver"><a class="btn-ghost" href="/">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Volver al panel
+      </a></p>
+    </div>
+  </main>
+  {% include "_footer.html.j2" %}
+  {% include "_auth_script.html.j2" %}
 </body>
 </html>

@@ -58,3 +58,128 @@
   {% endif %}
 </div>
 {% endmacro %}
+
+{% macro pingu(ancho=120) %}
+<svg class="pingu hola" viewBox="0 0 200 250" width="{{ ancho }}" height="{{ (ancho * 1.25) | round | int }}" aria-hidden="true" focusable="false">
+                <defs>
+                  <linearGradient id="gCuerpo" gradientUnits="userSpaceOnUse" x1="100" y1="22" x2="100" y2="238">
+                    <stop class="sb0" offset="0"/><stop class="sb1" offset=".5"/><stop class="sb2" offset="1"/>
+                  </linearGradient>
+                  <linearGradient id="gBorde" gradientUnits="userSpaceOnUse" x1="30" y1="24" x2="150" y2="170">
+                    <stop offset="0" stop-color="#fff" stop-opacity=".5"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/>
+                  </linearGradient>
+                  <radialGradient id="gSombraCuerpo" gradientUnits="userSpaceOnUse" cx="100" cy="150" r="100">
+                    <stop offset=".62" stop-color="#0b1020" stop-opacity="0"/><stop offset="1" stop-color="#0b1020" stop-opacity=".3"/>
+                  </radialGradient>
+                  <linearGradient id="gBarriga" gradientUnits="userSpaceOnUse" x1="100" y1="120" x2="100" y2="229">
+                    <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f0e6d6"/>
+                  </linearGradient>
+                  <radialGradient id="gBarrigaSombra" gradientUnits="userSpaceOnUse" cx="100" cy="176" r="62">
+                    <stop offset=".6" stop-color="#8a6f4a" stop-opacity="0"/><stop offset="1" stop-color="#8a6f4a" stop-opacity=".2"/>
+                  </radialGradient>
+                  <linearGradient id="gAleta" gradientUnits="userSpaceOnUse" x1="0" y1="114" x2="0" y2="180">
+                    <stop class="sa0" offset="0"/><stop class="sa1" offset="1"/>
+                  </linearGradient>
+                  <radialGradient id="gOjo" cx=".38" cy=".32" r=".85">
+                    <stop offset="0" stop-color="#34436b"/><stop offset=".55" stop-color="#1b2540"/><stop offset="1" stop-color="#0a0f1d"/>
+                  </radialGradient>
+                  <radialGradient id="gMejilla" cx=".5" cy=".5" r=".5">
+                    <stop offset="0" stop-color="#ff7f9c" stop-opacity=".85"/><stop offset="1" stop-color="#ff9db3" stop-opacity="0"/>
+                  </radialGradient>
+                  <linearGradient id="gPico" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#ffc94f"/><stop offset="1" stop-color="#f5921c"/>
+                  </linearGradient>
+                  <linearGradient id="gPicoB" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#f7a02e"/><stop offset="1" stop-color="#e57a12"/>
+                  </linearGradient>
+                  <linearGradient id="gPie" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#ffc562"/><stop offset="1" stop-color="#f4861a"/>
+                  </linearGradient>
+                </defs>
+
+                <ellipse class="p-sombra" cx="100" cy="241" rx="58" ry="7"/>
+
+                <g class="p-todo">
+                  <!-- piececitos -->
+                  <g class="p-pies">
+                    <g class="p-pie-i">
+                      <ellipse cx="76" cy="236" rx="19" ry="8" fill="url(#gPie)"/>
+                      <circle cx="63" cy="240" r="5.2" fill="url(#gPie)"/><circle cx="76" cy="242" r="5.2" fill="url(#gPie)"/><circle cx="89" cy="240" r="5.2" fill="url(#gPie)"/>
+                      <path d="M69.5 241 L69.5 244.5 M82.5 241 L82.5 244.5" stroke="#d9741a" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+                    </g>
+                    <g class="p-pie-d">
+                      <ellipse cx="124" cy="236" rx="19" ry="8" fill="url(#gPie)"/>
+                      <circle cx="111" cy="240" r="5.2" fill="url(#gPie)"/><circle cx="124" cy="242" r="5.2" fill="url(#gPie)"/><circle cx="137" cy="240" r="5.2" fill="url(#gPie)"/>
+                      <path d="M117.5 241 L117.5 244.5 M130.5 241 L130.5 244.5" stroke="#d9741a" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+                    </g>
+                  </g>
+
+                  <g class="p-respira">
+                    <!-- cuerpo redondito, con luz y sombra suaves -->
+                    <path fill="url(#gCuerpo)" d="M100 22 C146 22 168 58 166 98 C178 120 172 188 152 214 C140 232 120 238 100 238 C80 238 60 232 48 214 C28 188 22 120 34 98 C32 58 54 22 100 22 Z"/>
+                    <path fill="url(#gSombraCuerpo)" d="M100 22 C146 22 168 58 166 98 C178 120 172 188 152 214 C140 232 120 238 100 238 C80 238 60 232 48 214 C28 188 22 120 34 98 C32 58 54 22 100 22 Z"/>
+                    <path fill="none" stroke="url(#gBorde)" stroke-width="2.4" d="M100 22 C146 22 168 58 166 98 C178 120 172 188 152 214 C140 232 120 238 100 238 C80 238 60 232 48 214 C28 188 22 120 34 98 C32 58 54 22 100 22 Z"/>
+                    <ellipse cx="100" cy="38" rx="32" ry="11" fill="#fff" opacity=".13"/>
+                    <!-- barriguita -->
+                    <path fill="url(#gBarriga)" d="M100 120 C134 120 152 152 150 188 C148 216 128 229 100 229 C72 229 52 216 50 188 C48 152 66 120 100 120 Z"/>
+                    <path fill="url(#gBarrigaSombra)" d="M100 120 C134 120 152 152 150 188 C148 216 128 229 100 229 C72 229 52 216 50 188 C48 152 66 120 100 120 Z"/>
+
+                    <!-- cabeza: carita en forma de corazón -->
+                    <g class="p-cabeza">
+                      <path class="p-mechon" fill="url(#gCuerpo)" d="M90 25 Q86 10 95 16 Q99 3 103 16 Q112 8 110 25 Z"/>
+                      <path fill="#fffaf2" d="M100 114 C68 114 44 98 44 78 C44 60 62 54 77 58 C88 61 95 67 100 73 C105 67 112 61 123 58 C138 54 156 60 156 78 C156 98 132 114 100 114 Z"/>
+                      <circle cx="58" cy="100" r="11" fill="url(#gMejilla)"/>
+                      <circle cx="142" cy="100" r="11" fill="url(#gMejilla)"/>
+
+                      <g class="p-ojos">
+                        <g class="p-mirada"><g class="p-pupila">
+                          <circle cx="77" cy="84" r="11.5" fill="url(#gOjo)"/>
+                          <circle cx="80.6" cy="79.6" r="4.2" fill="#fff"/><circle cx="73.4" cy="89" r="1.9" fill="#fff" opacity=".85"/>
+                          <circle cx="123" cy="84" r="11.5" fill="url(#gOjo)"/>
+                          <circle cx="126.6" cy="79.6" r="4.2" fill="#fff"/><circle cx="119.4" cy="89" r="1.9" fill="#fff" opacity=".85"/>
+                        </g></g>
+                        <g class="p-parpados">
+                          <ellipse cx="77" cy="84" rx="12.6" ry="12.6" fill="#fffaf2"/>
+                          <ellipse cx="123" cy="84" rx="12.6" ry="12.6" fill="#fffaf2"/>
+                          <path d="M66 87 Q77 96 88 87 M112 87 Q123 96 134 87" fill="none" stroke="#1b2336" stroke-width="2.6" stroke-linecap="round"/>
+                        </g>
+                      </g>
+
+                      <!-- cejitas (solo se ven en algunos gestos) -->
+                      <g class="p-cejas" fill="none" stroke="#1b2336" stroke-width="2.6" stroke-linecap="round">
+                        <path class="p-ceja-i" d="M66 68 Q77 62 88 67"/>
+                        <path class="p-ceja-d" d="M112 67 Q123 62 134 68"/>
+                      </g>
+
+                      <!-- piquito -->
+                      <g class="p-pico">
+                        <ellipse class="p-boca" cx="100" cy="99" rx="8.5" ry="8.5" fill="#b83a52"/>
+                        <ellipse class="p-boca" cx="100" cy="104" rx="5" ry="3.6" fill="#ff8aa0"/>
+                        <path class="p-pico-b" fill="url(#gPicoB)" d="M93.5 99 Q100 107 106.5 99 Q105 108.5 100 110 Q95 108.5 93.5 99 Z"/>
+                        <path fill="url(#gPico)" d="M91 91 Q100 84 109 91 Q109 102 100 105 Q91 102 91 91 Z"/>
+                        <ellipse cx="96" cy="90" rx="2.4" ry="1.5" fill="#fff" opacity=".5"/>
+                      </g>
+                    </g>
+                    <!-- aletitas -->
+                    <g class="p-fl-i">
+                      <path fill="url(#gAleta)" d="M40 114 C20 124 12 150 22 170 C28 180 40 174 46 164 C54 150 56 130 52 118 Z"/>
+                      <path d="M44 124 C32 134 27 150 30 163" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2.4" stroke-linecap="round"/>
+                    </g>
+                    <g class="p-fl-d">
+                      <path fill="url(#gAleta)" d="M160 114 C180 124 188 150 178 170 C172 180 160 174 154 164 C146 150 144 130 148 118 Z"/>
+                      <path d="M156 124 C168 134 173 150 170 163" fill="none" stroke="#fff" stroke-opacity=".32" stroke-width="2.4" stroke-linecap="round"/>
+                    </g>
+                  </g>
+                </g>
+
+                <!-- efectos -->
+                <g transform="translate(84 18)"><path class="p-corazon c1" d="M0 -2 C-3 -8 -11 -5 -7 1 L0 9 L7 1 C11 -5 3 -8 0 -2 Z"/></g>
+                <g transform="translate(100 8)"><path class="p-corazon c2" d="M0 -2 C-3 -8 -11 -5 -7 1 L0 9 L7 1 C11 -5 3 -8 0 -2 Z"/></g>
+                <g transform="translate(118 20)"><path class="p-corazon c3" d="M0 -2 C-3 -8 -11 -5 -7 1 L0 9 L7 1 C11 -5 3 -8 0 -2 Z"/></g>
+                <text class="p-nota n1" x="150" y="46">&#9834;</text>
+                <text class="p-nota n2" x="34" y="36">&#9835;</text>
+                <text class="p-zzz z1" x="146" y="44">z</text>
+                <text class="p-zzz z2" x="158" y="28">Z</text>
+                <text class="p-zzz z3" x="172" y="10">Z</text>
+              </svg>
+{% endmacro %}

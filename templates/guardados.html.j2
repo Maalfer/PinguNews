@@ -15,7 +15,7 @@
     <div class="inner">
       <div class="brand-fila">
         <div class="brand">
-          <img class="logo" src="/static/logo.png" alt="" width="40" height="40">
+          <img class="logo" src="/static/logo.png" alt="" width="64" height="64">
           <h1>🔖 Mis guardados</h1>
           <span class="subtitulo">ítems que has guardado para ver más tarde</span>
         </div>
@@ -38,8 +38,6 @@
     {% endif %}
   </main>
 
-  <footer class="bottom">
-    <p>Panel generado localmente<span class="separador" aria-hidden="true">·</span>tus guardados son privados, solo los ves tú</p>
-  </footer>
+  {% include "_footer.html.j2" %}
 </body>
 </html>

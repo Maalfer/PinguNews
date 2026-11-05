@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ titulo }} — PinguNews</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <header class="top legal-top">
+    <div class="inner">
+      <a class="legal-marca" href="/" aria-label="PinguNews, ir al panel">
+        <img class="logo" src="/static/logo.png" alt="" width="64" height="64">
+        <span>PinguNews</span>
+      </a>
+      <a class="btn-ghost" href="/">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Volver al panel
+      </a>
+    </div>
+  </header>
+
+  <main class="wrap legal" id="contenido" tabindex="-1">
+    <article class="prosa">
+      <h1>{{ titulo }}</h1>
+      <p class="legal-fecha">Última actualización: {{ legal.actualizado }}</p>
+      {% include "legal/" ~ pagina ~ ".html.j2" %}
+    </article>
+
+    <nav class="legal-nav" aria-label="Otras páginas legales">
+      {% if pagina != "aviso-legal" %}<a class="btn-ghost" href="/aviso-legal">Aviso legal</a>{% endif %}
+      {% if pagina != "privacidad" %}<a class="btn-ghost" href="/privacidad">Política de privacidad</a>{% endif %}
+      {% if pagina != "cookies" %}<a class="btn-ghost" href="/cookies">Política de cookies</a>{% endif %}
+    </nav>
+  </main>
+
+  {% include "_footer.html.j2" %}
+</body>
+</html>

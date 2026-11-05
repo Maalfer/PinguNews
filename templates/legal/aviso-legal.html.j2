@@ -1,0 +1,78 @@
+<h2>1. Titular del sitio web</h2>
+<p>
+  En cumplimiento de la Ley 34/2002, de Servicios de la Sociedad de la Información y de Comercio
+  Electrónico (LSSI-CE), se informa de que este sitio web es un proyecto personal, sin ánimo de lucro
+  y sin publicidad, cuyo titular es:
+</p>
+<dl class="ficha">
+  <div><dt>Titular</dt><dd>{{ legal.titular }}</dd></div>
+  <div><dt>Sitio web</dt><dd>https://{{ legal.dominio }}</dd></div>
+  <div><dt>Contacto</dt><dd>{% if legal.email %}<a href="mailto:{{ legal.email }}">{{ legal.email }}</a>{% else %}<a href="{{ legal.repo }}/issues" target="_blank" rel="noopener noreferrer">Incidencias del repositorio en GitHub<span class="sr-only"> (se abre en una pestaña nueva)</span></a> (son públicas: no incluyas datos personales en ellas){% endif %}</dd></div>
+  <div><dt>Código fuente</dt><dd><a href="{{ legal.repo }}" target="_blank" rel="noopener noreferrer">{{ legal.repo }}<span class="sr-only"> (se abre en una pestaña nueva)</span></a></dd></div>
+</dl>
+
+<h2>2. Objeto del sitio</h2>
+<p>
+  PinguNews es un panel que reúne, en un solo lugar, los titulares de noticias sobre ciberseguridad,
+  hacking, tendencias del sector, empleo y desarrollo IT procedentes de fuentes públicas en español
+  (feeds RSS) y de ofertas de empleo publicadas por <strong>RemoteOK</strong> y <strong>Jobicy</strong>.
+  Para cada noticia se muestra únicamente el título, un breve resumen y un enlace a la página original.
+</p>
+
+<h2>3. Condiciones de uso</h2>
+<ul>
+  <li>El acceso y la consulta del panel son gratuitos y no requieren registro.</li>
+  <li>El registro es opcional y permite guardar noticias y darles «me gusta». Eres responsable de mantener
+    la confidencialidad de tu contraseña y de la actividad de tu cuenta.</li>
+  <li>Te comprometes a hacer un uso lícito y respetuoso: no intentar vulnerar la seguridad del sitio,
+    no sobrecargarlo con peticiones automatizadas y no usar la cuenta para fines ilícitos. El titular
+    puede suspender o eliminar cuentas que incumplan estas condiciones.</li>
+</ul>
+
+<h2>4. Contenidos de terceros y propiedad intelectual</h2>
+<p>
+  Los titulares, resúmenes, marcas y contenidos enlazados pertenecen a sus respectivos autores y medios
+  de origen; PinguNews no los reclama como propios y siempre enlaza a la fuente original. Las frases
+  motivadoras pertenecen a sus autores, o son refranes y proverbios de dominio público; algunas se
+  obtienen de la API pública «FraseDelDía».
+</p>
+<p>
+  El código fuente de PinguNews está publicado en GitHub; consulta en el repositorio las condiciones de su
+  licencia. El logotipo y la mascota forman parte de la identidad del proyecto.
+</p>
+<p>
+  Si eres titular de algún contenido y deseas que se retire o se corrija, escríbenos a través de
+  {% if legal.email %}<a href="mailto:{{ legal.email }}">{{ legal.email }}</a>{% else %}las <a href="{{ legal.repo }}/issues" target="_blank" rel="noopener noreferrer">incidencias del repositorio en GitHub<span class="sr-only"> (se abre en una pestaña nueva)</span></a> (son públicas: no incluyas datos personales en ellas){% endif %} y lo atenderemos con la mayor brevedad.
+</p>
+
+<h2>5. Enlaces a otros sitios</h2>
+<p>
+  Este sitio contiene enlaces a páginas web de terceros. PinguNews no controla ni se responsabiliza de sus
+  contenidos, de su disponibilidad ni de sus políticas de privacidad y cookies; te recomendamos revisarlas.
+</p>
+
+<h2>6. Exclusión de garantías y responsabilidad</h2>
+<p>
+  La información se ofrece con fines informativos «tal cual». No se garantiza que esté libre de errores, que
+  esté actualizada en todo momento ni que el servicio funcione sin interrupciones. El titular no será
+  responsable de los daños derivados del uso del sitio o de las decisiones tomadas a partir de su contenido.
+</p>
+
+<h2>7. Protección de datos y cookies</h2>
+<p>
+  El tratamiento de datos personales se describe en la <a href="/privacidad">Política de privacidad</a> y el uso
+  de cookies y almacenamiento local en la <a href="/cookies">Política de cookies</a>.
+</p>
+
+<h2>8. Legislación aplicable y jurisdicción</h2>
+<p>
+  Estas condiciones se rigen por la legislación española. Para cualquier controversia, y salvo que la ley
+  establezca otro fuero (por ejemplo, el del domicilio del consumidor), las partes se someten a los juzgados y
+  tribunales que correspondan conforme a la normativa vigente.
+</p>
+
+<h2>9. Modificaciones</h2>
+<p>
+  El titular podrá modificar este aviso para adaptarlo a novedades legales o del servicio. La fecha de la
+  última revisión figura al principio de esta página.
+</p>

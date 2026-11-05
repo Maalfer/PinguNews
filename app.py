@@ -21,7 +21,7 @@ from urllib.parse import urlencode, urlparse
 
 import yaml
 from fastapi import FastAPI, Form, Query
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -29,6 +29,7 @@ from starlette.requests import Request
 
 import auth
 from frases import frase_aleatoria
+from legal import LEGAL
 import csrf
 from classifier import CATEGORIA_LABELS, CATEGORIA_ORDEN
 from collector import ejecutar_recoleccion
@@ -66,6 +67,8 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # (XSS) en cada página del panel. Se fuerza explícitamente a True.
 templates.env.autoescape = True
 templates.env.globals["frase_aleatoria"] = frase_aleatoria
+templates.env.globals["legal"] = LEGAL
+templates.env.globals["anio_actual"] = lambda: datetime.now().year
 
 app = FastAPI(title="Panel de ciberseguridad e IT")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -400,6 +403,51 @@ def logout(request: Request, csrf_token: str = Form(...)):
     csrf.exigir_csrf(request, csrf_token)
     request.session.clear()
     return RedirectResponse("/", status_code=303)
+
+
+# ---- Páginas legales ----
+
+_PAGINAS_LEGALES = {
+    "aviso-legal": "Aviso legal",
+    "privacidad": "Política de privacidad",
+    "cookies": "Política de cookies",
+}
+
+
+def _pagina_legal(request: Request, clave: str):
+    return templates.TemplateResponse(
+        request, "legal.html.j2", {"titulo": _PAGINAS_LEGALES[clave], "pagina": clave}
+    )
+
+
+@app.get("/aviso-legal", response_class=HTMLResponse)
+def aviso_legal(request: Request):
+    return _pagina_legal(request, "aviso-legal")
+
+
+@app.get("/privacidad", response_class=HTMLResponse)
+def privacidad(request: Request):
+    return _pagina_legal(request, "privacidad")
+
+
+@app.get("/cookies", response_class=HTMLResponse)
+def cookies(request: Request):
+    return _pagina_legal(request, "cookies")
+
+
+# ---- Otra frase motivadora (la pide el botón del bocadillo) ----
+
+
+@app.get("/frase")
+def otra_frase(actual: str = Query("", max_length=400)):
+    """Devuelve una frase distinta de la que el usuario ya está viendo.
+    Solo lee de la reserva en memoria / lista local: no hace llamadas externas."""
+    f = frase_aleatoria()
+    for _ in range(8):
+        if f["texto"] != actual:
+            break
+        f = frase_aleatoria()
+    return JSONResponse({"texto": f["texto"], "autor": f.get("autor", "")}, headers={"Cache-Control": "no-store"})
 
 
 # ---- Guardar para más tarde / likes ----
