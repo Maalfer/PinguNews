@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mis guardados — Panel de ciberseguridad &amp; IT</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+</head>
+<body>
+  {% import "_macros.html.j2" as m %}
+
+  <header class="top">
+    <div class="inner">
+      <div class="brand-fila">
+        <div class="brand">
+          <img class="logo" src="/static/logo.png" alt="" width="40" height="40">
+          <h1>🔖 Mis guardados</h1>
+          <span class="subtitulo">ítems que has guardado para ver más tarde</span>
+        </div>
+        {{ m.auth_area(usuario) }}
+      </div>
+      <p class="estado"><a href="/">← Volver al panel</a></p>
+    </div>
+  </header>
+
+  <div class="wrap">
+    {% if items %}
+      {% for item in items %}{{ m.render_item(item) }}{% endfor %}
+    {% else %}
+      <p class="vacio">Todavía no has guardado ningún ítem. Pulsa "📑 Guardar" en cualquier noticia del panel para que aparezca aquí.</p>
+    {% endif %}
+  </div>
+
+  <footer class="bottom">
+    <p>Panel generado localmente<span class="separador" aria-hidden="true">·</span>tus guardados son privados, solo los ves tú</p>
+  </footer>
+</body>
+</html>

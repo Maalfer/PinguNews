@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel — Ciberseguridad &amp; IT</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+</head>
+<body>
+  {% import "_macros.html.j2" as m %}
+
+  <header class="top">
+    <div class="inner">
+      <div class="brand-fila">
+        <div class="brand">
+          <img class="logo" src="/static/logo.png" alt="" width="40" height="40">
+          <h1>Panel de ciberseguridad &amp; IT</h1>
+          <span class="subtitulo">España · resumen de los últimos días</span>
+        </div>
+        {{ m.auth_area(usuario) }}
+      </div>
+      <p class="estado">
+        {% if ultima_recoleccion %}Última recolección: {{ ultima_recoleccion }}{% else %}Todavía no se ha recolectado nada — pulsa "Actualizar ahora".{% endif %}
+      </p>
+
+      <div class="panel-controles">
+        <div class="grupo-control">
+          <span class="grupo-control-titulo" id="titulo-rango">Rango de fechas</span>
+          <div class="fila-rango">
+            <nav class="dias-selector" aria-labelledby="titulo-rango">
+              <ul>
+                {% for opcion in opciones_dias %}
+                <li>
+                  <a href="?dias={{ opcion }}{{ categorias_qs }}" {{ 'aria-current="true"' if opcion == dias else '' }}>
+                    {{ opcion }}d
+                  </a>
+                </li>
+                {% endfor %}
+              </ul>
+            </nav>
+            <form method="post" action="/actualizar?dias={{ dias }}{{ categorias_qs }}">
+              <button class="btn btn-primario" type="submit">↻ Actualizar ahora</button>
+            </form>
+          </div>
+        </div>
+
+        <details class="grupo-control grupo-control--plegable">
+          <summary class="grupo-control-titulo">
+            Categorías a mostrar
+            <span class="resumen-seleccion">— {{ categorias_activas | length }} de {{ categorias_disponibles | length }} seleccionadas</span>
+          </summary>
+          <form method="get" action="/" class="contenido-plegable">
+            <fieldset>
+              <legend class="sr-only">Elige qué categorías mostrar</legend>
+              <input type="hidden" name="dias" value="{{ dias }}">
+              <ul class="lista-categorias">
+                {% for cat, label in categorias_disponibles %}
+                <li>
+                  <label class="chip">
+                    <input type="checkbox" name="categorias" value="{{ cat }}" {{ 'checked' if cat in categorias_activas else '' }}>
+                    {{ label }}
+                  </label>
+                </li>
+                {% endfor %}
+              </ul>
+              <div class="fila-aplicar">
+                <button class="btn btn-primario" type="submit">Aplicar filtros</button>
+              </div>
+            </fieldset>
+          </form>
+        </details>
+      </div>
+
+      <dl class="resumen-stats">
+        <div><dt>Ítems en este rango</dt><dd>{{ total_items }}</dd></div>
+        {% for cat, label in categorias_disponibles %}
+        <div><dt>{{ label }}</dt><dd>{{ conteo_por_categoria.get(cat, 0) }}</dd></div>
+        {% endfor %}
+      </dl>
+    </div>
+  </header>
+
+  <div class="wrap">
+    {% if destacados %}
+    <section class="destacados" aria-labelledby="h-destacados">
+      <div class="cat-header">
+        <h2 id="h-destacados">🔥 Lo más comentado</h2>
+        <span class="cat-count">cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
+      </div>
+      {% for item in destacados %}{{ m.render_item(item) }}{% endfor %}
+    </section>
+    {% endif %}
+
+    {% for cat, label in categorias_disponibles %}
+    {% if cat in categorias_activas %}
+    <section class="categoria" aria-labelledby="h-{{ cat }}">
+      <div class="cat-header">
+        <span class="dot dot-{{ cat }}" aria-hidden="true"></span>
+        <h2 id="h-{{ cat }}">{{ label }}</h2>
+        <span class="cat-count">{{ conteo_por_categoria.get(cat, 0) }}</span>
+      </div>
+      {% if grupos.get(cat) %}
+        {% for item in grupos[cat] %}{{ m.render_item(item) }}{% endfor %}
+      {% elif conteo_por_categoria.get(cat, 0) > 0 %}
+        <p class="vacio">No hay más resultados en esta página para esta categoría.</p>
+      {% else %}
+        <p class="vacio">Sin ítems en este rango de días.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+    {% endfor %}
+
+    {% if total_paginas > 1 %}
+    <nav class="paginacion" aria-label="Paginación de resultados">
+      {% if pagina > 1 %}
+        <a href="?dias={{ dias }}{{ categorias_qs }}&pagina={{ pagina - 1 }}" rel="prev">← Anterior</a>
+      {% else %}
+        <span class="paginacion-deshabilitado" aria-hidden="true">← Anterior</span>
+      {% endif %}
+
+      <span class="paginacion-estado" aria-current="page">Página {{ pagina }} de {{ total_paginas }}</span>
+
+      {% if pagina < total_paginas %}
+        <a href="?dias={{ dias }}{{ categorias_qs }}&pagina={{ pagina + 1 }}" rel="next">Siguiente →</a>
+      {% else %}
+        <span class="paginacion-deshabilitado" aria-hidden="true">Siguiente →</span>
+      {% endif %}
+    </nav>
+    {% endif %}
+  </div>
+
+  <footer class="bottom">
+    <p>
+      Panel generado localmente<span class="separador" aria-hidden="true">·</span>fuentes: RSS en español, RemoteOK, Jobicy{{ ", Twitter/X" if twitter_activo else "" }}<span class="separador" aria-hidden="true">·</span>sin servicios externos de pago
+    </p>
+  </footer>
+</body>
+</html>

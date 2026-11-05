@@ -1,0 +1,252 @@
+<style>
+  :root {
+    --bg: #f4f4f5;
+    --bg-card: #ffffff;
+    --border: #d4d4d8;
+    --text: #18181b;
+    --text-muted: #52525b;
+    --text-faint: #a1a1aa;
+    --accent: #18181b;
+    --accent-text: #fafafa;
+    --focus-ring: #18181b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --dot-1: #18181b;
+    --dot-2: #52525b;
+    --dot-3: #71717a;
+    --dot-4: #a1a1aa;
+    --dot-5: #d4d4d8;
+    --like-activo: #b91c1c;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #09090b; --bg-card: #18181b; --border: #3f3f46;
+      --text: #f4f4f5; --text-muted: #d4d4d8; --text-faint: #71717a;
+      --accent: #f4f4f5; --accent-text: #18181b; --focus-ring: #f4f4f5;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --dot-1: #f4f4f5; --dot-2: #d4d4d8; --dot-3: #a1a1aa; --dot-4: #71717a; --dot-5: #52525b;
+      --like-activo: #f87171;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #09090b; --bg-card: #18181b; --border: #3f3f46;
+    --text: #f4f4f5; --text-muted: #d4d4d8; --text-faint: #71717a;
+    --accent: #f4f4f5; --accent-text: #18181b; --focus-ring: #f4f4f5;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --dot-1: #f4f4f5; --dot-2: #d4d4d8; --dot-3: #a1a1aa; --dot-4: #71717a; --dot-5: #52525b;
+    --like-activo: #f87171;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 40px; }
+
+  /* Visible para todos: foco de teclado siempre claro */
+  a:focus-visible, button:focus-visible, input:focus-visible, label:focus-within {
+    outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px;
+  }
+
+  /* ---- Header ---- */
+  header.top { background: var(--bg-card); border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  header.top .inner { max-width: 760px; margin: 0 auto; padding: 32px 16px 24px; }
+  .brand-fila { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .brand h1 { font-size: 1.3rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .brand .subtitulo { color: var(--text-muted); font-size: 0.85rem; }
+  .estado { margin-top: 4px; color: var(--text-muted); font-size: 0.78rem; }
+  .logo { width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0; display: block; }
+  .auth-logo { display: flex; justify-content: center; margin-bottom: 14px; }
+  .auth-logo img { width: 72px; height: 72px; border-radius: 16px; }
+
+  /* ---- Área de autenticación (esquina del header) ---- */
+  .auth-area {
+    display: flex; align-items: center; gap: 10px; font-size: 0.82rem;
+    color: var(--text-muted); flex-wrap: wrap;
+  }
+  .auth-area a { font-weight: 600; text-decoration: none; }
+  .auth-area a:hover { text-decoration: underline; }
+  .auth-area .saludo { color: var(--text); font-weight: 600; }
+  .btn-enlace {
+    background: none; border: none; padding: 0; margin: 0; font: inherit;
+    color: var(--text-muted); text-decoration: underline; cursor: pointer;
+  }
+  .btn-enlace:hover { color: var(--text); }
+
+  /* ---- Barra de controles: dos bloques agrupados y etiquetados ---- */
+  .panel-controles {
+    margin-top: 22px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--bg); overflow: hidden;
+  }
+  .grupo-control { padding: 14px 16px; }
+  .grupo-control + .grupo-control { border-top: 1px solid var(--border); }
+  .grupo-control-titulo {
+    display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 10px;
+  }
+  /* Reset de los estilos nativos del navegador para fieldset/legend: solo se
+     usan por semántica/accesibilidad (agrupan los checkboxes para lectores
+     de pantalla), el aspecto visual lo da .grupo-control / .grupo-control-titulo */
+  fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  legend.grupo-control-titulo { padding: 0; }
+
+  /* Oculto visualmente pero disponible para lectores de pantalla (nunca
+     display:none, que también lo saca del foco de teclado) */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+
+  /* ---- Categorías como panel plegable (<details>/<summary> nativos:
+     accesibles por teclado y lector de pantalla sin JavaScript) ---- */
+  details.grupo-control-plegable summary.grupo-control-titulo,
+  .grupo-control--plegable > summary.grupo-control-titulo {
+    cursor: pointer; display: flex; align-items: center; gap: 6px;
+    list-style: none; user-select: none; margin-bottom: 0;
+  }
+  .grupo-control--plegable > summary::-webkit-details-marker { display: none; }
+  .grupo-control--plegable > summary::marker { content: ""; }
+  .grupo-control--plegable > summary::after {
+    content: "▾"; margin-left: auto; color: var(--text-muted); font-size: 0.9em;
+    transition: transform 0.15s ease;
+  }
+  .grupo-control--plegable[open] > summary::after { transform: rotate(180deg); }
+  .grupo-control--plegable > summary:focus-visible {
+    outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px;
+  }
+  .resumen-seleccion { text-transform: none; font-weight: 400; letter-spacing: normal; color: var(--text-muted); }
+  .contenido-plegable { margin-top: 14px; }
+
+  .fila-rango { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+  nav.dias-selector ul { list-style: none; display: flex; gap: 4px; margin: 0; padding: 3px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+  nav.dias-selector li { margin: 0; }
+  nav.dias-selector a {
+    display: block; text-decoration: none; font-size: 0.8rem; color: var(--text-muted);
+    border-radius: 6px; padding: 6px 11px; font-weight: 500; min-width: 2.4em; text-align: center;
+  }
+  nav.dias-selector a[aria-current="true"] { background: var(--accent); color: var(--accent-text); font-weight: 700; }
+  nav.dias-selector a:hover:not([aria-current="true"]) { background: var(--border); }
+
+  .btn {
+    font-size: 0.82rem; border: 1px solid var(--border); border-radius: 8px; padding: 8px 16px;
+    background: var(--bg-card); color: var(--text); cursor: pointer; font-weight: 500;
+    min-height: 2.5em;
+  }
+  .btn:hover { background: var(--border); }
+  .btn-primario { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn-primario:hover { opacity: 0.85; }
+
+  .lista-categorias {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .lista-categorias li { margin: 0; }
+  .chip {
+    font-size: 0.8rem; border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 12px 6px 8px; cursor: pointer; background: var(--bg-card); color: var(--text-muted);
+    user-select: none; display: inline-flex; align-items: center; gap: 7px; min-height: 2.2em;
+  }
+  .chip:has(input:checked) { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .chip input { width: 15px; height: 15px; accent-color: var(--text); cursor: pointer; flex-shrink: 0; }
+  .chip:has(input:checked) input { accent-color: var(--bg); }
+
+  .fila-aplicar { margin-top: 12px; }
+
+  /* ---- Resumen de resultados (lista de definición, no una frase larga) ---- */
+  dl.resumen-stats {
+    margin: 18px 0 0; display: flex; flex-wrap: wrap; gap: 8px 18px;
+    font-size: 0.78rem;
+  }
+  dl.resumen-stats div { display: flex; gap: 5px; margin: 0; }
+  dl.resumen-stats dt { color: var(--text-muted); }
+  dl.resumen-stats dd { margin: 0; font-weight: 700; color: var(--text); }
+
+  /* ---- Secciones de contenido ---- */
+  section.categoria { margin-bottom: 30px; }
+  .cat-header { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+  .cat-header h2 { font-size: 0.95rem; font-weight: 600; margin: 0; }
+  .cat-count { font-size: 0.75rem; color: var(--text-muted); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; border: 1px solid var(--border); }
+  .dot-ciberseguridad { background: var(--dot-1); }
+  .dot-tendencias_sector { background: var(--dot-2); }
+  .dot-empleo { background: var(--dot-3); }
+  .dot-desarrollo_it { background: var(--dot-4); }
+  .dot-actualidad { background: var(--dot-5); }
+
+  .item {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 13px 16px; margin-bottom: 8px; box-shadow: var(--shadow);
+  }
+  .item a.titulo { color: var(--text); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+  .item a.titulo:hover { text-decoration: underline; }
+  .meta { margin-top: 5px; font-size: 0.76rem; color: var(--text-muted); display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+  .meta .fuente { color: var(--text); font-weight: 500; }
+  .resumen { margin-top: 6px; font-size: 0.85rem; color: var(--text-muted); }
+  .vacio { color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
+
+  /* ---- Acciones por ítem: me gusta / guardar ---- */
+  .acciones-item { margin-top: 10px; display: flex; gap: 8px; }
+  .form-accion { margin: 0; }
+  .btn-accion {
+    font-size: 0.78rem; border: 1px solid var(--border); border-radius: 999px;
+    padding: 5px 11px; background: var(--bg-card); color: var(--text-muted);
+    cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-accion:hover { background: var(--border); }
+  .btn-accion.activo { color: var(--text); border-color: var(--text); font-weight: 600; }
+  .btn-accion.me-gusta.activo { color: var(--like-activo); border-color: var(--like-activo); }
+
+  /* ---- Destacados: cubiertos por varias fuentes, señal de qué pesa más ---- */
+  section.destacados { margin-bottom: 36px; }
+  section.destacados .cat-header h2 { font-size: 1rem; }
+  section.destacados .item { border-color: var(--text-faint); }
+  .badge-cobertura {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: var(--text); color: var(--bg); border-radius: 999px;
+    padding: 1px 8px; font-size: 0.72rem; font-weight: 600;
+  }
+
+  /* ---- Paginación ---- */
+  nav.paginacion {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    margin-top: 12px; padding-top: 18px; border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  nav.paginacion a {
+    text-decoration: none; color: var(--text); font-weight: 600;
+    border: 1px solid var(--border); border-radius: 8px; padding: 7px 14px;
+    background: var(--bg-card);
+  }
+  nav.paginacion a:hover { background: var(--border); }
+  nav.paginacion .paginacion-deshabilitado {
+    color: var(--text-faint); border: 1px solid transparent; padding: 7px 14px;
+  }
+  nav.paginacion .paginacion-estado { color: var(--text-muted); }
+
+  /* ---- Formularios de autenticación (login / registro) ---- */
+  .auth-card {
+    max-width: 380px; margin: 56px auto; background: var(--bg-card);
+    border: 1px solid var(--border); border-radius: 12px; padding: 28px 26px;
+    box-shadow: var(--shadow);
+  }
+  .auth-card h1 { font-size: 1.15rem; margin: 0 0 18px; }
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 5px; }
+  .campo input {
+    width: 100%; font-size: 0.9rem; padding: 9px 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text);
+  }
+  .auth-error {
+    background: var(--bg); border: 1px solid var(--like-activo); color: var(--like-activo);
+    border-radius: 8px; padding: 9px 12px; font-size: 0.82rem; margin-bottom: 14px;
+  }
+  .auth-card .btn-primario { width: 100%; margin-top: 4px; }
+  .auth-enlace { margin-top: 16px; font-size: 0.82rem; color: var(--text-muted); text-align: center; }
+
+  /* ---- Footer ---- */
+  footer.bottom { margin-top: 48px; border-top: 1px solid var(--border); padding: 22px 16px 28px; text-align: center; }
+  footer.bottom p { margin: 0; color: var(--text-muted); font-size: 0.78rem; }
+  footer.bottom .separador { margin: 0 8px; color: var(--text-faint); }
+</style>

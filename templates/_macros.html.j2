@@ -1,0 +1,47 @@
+{% macro render_item(item) %}
+<article class="item">
+  <a class="titulo" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.titulo }}</a>
+  <div class="meta">
+    <span class="fuente">{{ item.fuente }}</span>
+    <span aria-hidden="true">·</span>
+    <span>{{ item.fecha_fmt }}</span>
+    {% if item.autor %}<span aria-hidden="true">·</span><span>{{ item.autor }}</span>{% endif %}
+    {% if item.cobertura and item.cobertura > 1 %}
+    <span aria-hidden="true">·</span>
+    <span class="badge-cobertura" title="Cubierto también por: {{ item.fuentes_cobertura_lista | join(', ') }}">
+      📡 {{ item.cobertura }} fuentes
+    </span>
+    {% endif %}
+  </div>
+  {% if item.resumen %}<div class="resumen">{{ item.resumen }}</div>{% endif %}
+  <div class="acciones-item">
+    <form method="post" action="/like/{{ item.hash }}" class="form-accion">
+      <button type="submit" class="btn-accion me-gusta {{ 'activo' if item.le_gusta else '' }}"
+              aria-pressed="{{ 'true' if item.le_gusta else 'false' }}">
+        {{ '❤' if item.le_gusta else '🤍' }} <span>{{ item.likes }}</span>
+      </button>
+    </form>
+    <form method="post" action="/guardar/{{ item.hash }}" class="form-accion">
+      <button type="submit" class="btn-accion {{ 'activo' if item.guardado else '' }}"
+              aria-pressed="{{ 'true' if item.guardado else 'false' }}">
+        {% if item.guardado %}🔖 Guardado{% else %}📑 Guardar{% endif %}
+      </button>
+    </form>
+  </div>
+</article>
+{% endmacro %}
+
+{% macro auth_area(usuario) %}
+<div class="auth-area">
+  {% if usuario %}
+    <span class="saludo">👤 {{ usuario.nombre_usuario }}</span>
+    <a href="/guardados">🔖 Mis guardados</a>
+    <form method="post" action="/logout" style="margin:0;">
+      <button type="submit" class="btn-enlace">Cerrar sesión</button>
+    </form>
+  {% else %}
+    <a href="/login">Iniciar sesión</a>
+    <a href="/registro">Crear cuenta</a>
+  {% endif %}
+</div>
+{% endmacro %}

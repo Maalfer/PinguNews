@@ -1,0 +1,13 @@
+feedparser>=6.0.11
+requests>=2.32.0
+PyYAML>=6.0.2
+Jinja2>=3.1.4
+python-dateutil>=2.9.0
+beautifulsoup4>=4.12.3
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+itsdangerous>=2.2.0
+python-multipart>=0.0.12
+# Opcional: solo necesario si activas twitter.enabled: true en config.yaml.
+# No se instala desde PyPI (versión desactualizada); instalar desde GitHub:
+#   pip install git+https://github.com/JustAnotherArchivist/snscrape.git

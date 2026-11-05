@@ -1,0 +1,246 @@
+# Configuración central de la herramienta de monitorización
+# Todas las rutas son relativas a la raíz del proyecto.
+
+general:
+  # Cuántas horas hacia atrás se busca contenido al recolectar (no es la
+  # ventana que se ve en el panel web, solo cuánto se intenta traer de cada
+  # fuente en cada ejecución). 360h = 15 días, para no dejar huecos si la
+  # recolección no se ejecuta todos los días; el histórico ya deduplica.
+  lookback_hours: 360
+  # Idioma objetivo (informativo, usado por algunos filtros heurísticos)
+  idioma: es
+  # Base de datos SQLite para histórico y deduplicado
+  db_path: data/herramienta.db
+  # Fichero de log
+  log_path: logs/app.log
+  log_level: INFO
+  # Deduplicado por similitud de título (no solo por URL exacta): si dos
+  # fuentes distintas cubren la misma noticia con titulares distintos, se
+  # queda solo la primera. "dias" es contra cuánto histórico se compara al
+  # guardar, y "umbral" (0-1) cuánto solapamiento de palabras hace falta
+  # para considerarlas la misma noticia (más alto = más estricto).
+  dedup_similitud:
+    dias: 30
+    umbral: 0.55
+
+# Panel web (ver app.py)
+dashboard:
+  # Rango de días mostrado por defecto al abrir el panel
+  dias_por_defecto: 15
+  # Opciones de rango que se muestran como botones en el panel
+  opciones_dias: [1, 3, 7, 15, 30]
+  # Sección "🔥 Lo más comentado": ítems cubiertos por varias fuentes
+  # distintas (ver dedup.py), pensada para encontrar material jugoso para
+  # comentar en directo. "minima" = a partir de cuántas fuentes se considera
+  # destacado; "max" = cuántos se muestran como mucho.
+  destacados_cobertura_minima: 2
+  destacados_max: 8
+  # Cuántos ítems se muestran como máximo por página dentro de cada sección
+  # de categoría (ya vienen ordenados por relevancia, así que los mejores
+  # siempre caen en la página 1).
+  items_por_pagina: 20
+
+# Palabras clave usadas para clasificar y filtrar contenido relevante.
+# Se usan en minúsculas y sin acentos para la comparación (ver utils.normalize).
+keywords:
+  ciberseguridad:
+    - ciberseguridad
+    - seguridad informatica
+    - hacking
+    - hacker
+    - pentesting
+    - pentest
+    - infosec
+    - cve
+    - vulnerabilidad
+    - ransomware
+    - ciberataque
+    - malware
+    - phishing
+    - exploit
+    - zero-day
+    - 0day
+    - apt
+    - devsecops
+    - red team
+    - blue team
+    - soc
+    - incibe
+  # Noticias sobre el estado del sector en general (no ofertas concretas de
+  # empleo, que van en "empleo"): despidos, crisis, pero también buenas
+  # noticias como crecimiento o inversión. Pensada para tener material que
+  # comentar en directo (p. ej. Twitch), no solo avisos técnicos.
+  tendencias_sector:
+    - despido
+    - despidos
+    - recorte de plantilla
+    - recortes de plantilla
+    - recorte de personal
+    - ere
+    - expediente de regulacion de empleo
+    - desempleo
+    - paro
+    - cierre de la empresa
+    - quiebra
+    - cese de actividad
+    - contratacion masiva
+    - creacion de empleo
+    - auge del sector
+    - crecimiento del sector
+    - boom tecnologico
+    - ronda de inversion
+    - ronda de financiacion
+    - adquisicion de la empresa
+    - fusion empresarial
+    - salida a bolsa
+    - escasez de talento
+    - falta de profesionales
+    - brecha de talento
+    - fuga de talento
+    - subida de salarios
+    - recesion
+    - crisis del sector
+  empleo:
+    - empleo
+    - oferta de trabajo
+    - se busca
+    - vacante
+    - contratacion
+    - trabajo remoto
+    - se necesita
+    - rrhh
+    - talento
+  desarrollo_it:
+    - desarrollo
+    - programacion
+    - devops
+    - cloud
+    - inteligencia artificial
+    - software
+    - open source
+    - base de datos
+    - framework
+    - lenguaje de programacion
+
+# Twitter / X: sin Bearer Token disponible -> se usa snscrape como fallback.
+# AVISO (ver README): X ha endurecido las protecciones anti-scraping y snscrape
+# puede fallar o devolver resultados vacíos sin previo aviso. Está desactivado
+# por defecto para que el resto de la herramienta funcione siempre.
+twitter:
+  enabled: false
+  # Número máximo de tuits a recuperar por término de búsqueda
+  max_results_per_query: 30
+  hashtags:
+    - "#ciberseguridad"
+    - "#hacking"
+    - "#pentesting"
+    - "#infosec"
+    - "#CVE"
+    - "#ransomware"
+    - "#ciberataque"
+    - "#empleoIT"
+    - "#devsecops"
+    - "#seguridadinformatica"
+  # Cuentas relevantes en español del sector (sin @), editable libremente.
+  cuentas:
+    - "hispasec"
+    - "elladodelmal"
+    - "INCIBE"
+    - "s21sec"
+
+# Fuentes RSS de noticias de ciberseguridad / IT en español.
+# Verificadas manualmente (curl) el 2026-11-05. Añade cualquier feed nuevo
+# como una entrada más de la lista, no hace falta tocar código.
+# Nota: computerworld.es y genbeta/xataka se probaron y se descartaron
+# (ver README: bloqueo explícito a bots de Claude, o RSS roto).
+rss_feeds:
+  - nombre: "Hispasec (Una al día)"
+    url: "https://unaaldia.hispasec.com/feed/"
+    categoria: ciberseguridad
+  - nombre: "El Lado del Mal"
+    url: "https://www.elladodelmal.com/feeds/posts/default?alt=rss"
+    categoria: ciberseguridad
+  - nombre: "WeLiveSecurity (ESET, en español)"
+    url: "https://www.welivesecurity.com/la-es/rss/feed/"
+    categoria: ciberseguridad
+  - nombre: "Hackplayers"
+    url: "https://www.hackplayers.com/feeds/posts/default?alt=rss"
+    categoria: ciberseguridad
+  - nombre: "Segu-Info"
+    url: "https://blog.segu-info.com.ar/feeds/posts/default?alt=rss"
+    categoria: ciberseguridad
+  - nombre: "MuySeguridad"
+    url: "https://www.muyseguridad.net/feed/"
+    categoria: ciberseguridad
+  - nombre: "Flu Project"
+    url: "https://www.flu-project.com/feeds/posts/default?alt=rss"
+    categoria: ciberseguridad
+  - nombre: "RedesZone"
+    url: "https://www.redeszone.net/feed/"
+    categoria: desarrollo_it
+  - nombre: "MuyComputer"
+    url: "https://www.muycomputer.com/feed/"
+    categoria: desarrollo_it
+  - nombre: "Think Big (Telefónica)"
+    url: "https://empresas.blogthinkbig.com/feed/"
+    categoria: desarrollo_it
+  - nombre: "Channel Partner"
+    url: "https://www.channelpartner.es/feed/"
+    categoria: tendencias_sector
+
+# Fuentes de empleo. LinkedIn no se incluye: su scraping requiere login y
+# contraviene sus Términos de Servicio, por lo que no es fiable ni legal
+# hacerlo de forma automatizada. INCIBE/Tecnoempleo no se usan para scraping
+# directo (ver README: tecnoempleo.com bloquea explícitamente bots de IA en
+# su robots.txt). En su lugar se usan fuentes públicas sin necesidad de
+# API key ni login:
+empleo:
+  # Las ofertas se publican con menor frecuencia que las noticias, así que
+  # usan su propia ventana temporal (en horas) en vez de general.lookback_hours.
+  # 360h = 15 días, igual que el resto de la herramienta.
+  lookback_hours: 360
+  # Palabras que debe contener el PUESTO (por palabra completa, no subcadena)
+  # para considerarse una oferta relevante. Se usa para RemoteOK y para los
+  # feeds RSS de empleo (fuentes_rss). No se usa para Jobicy, que filtra por
+  # su propio campo de industria (más preciso que buscar palabras).
+  # Nota: no se confía en los "tags" que pone RemoteOK en cada oferta (p. ej.
+  # etiquetan como "infosec" puestos genéricos de Cloud/Sales) — solo en el
+  # título real del puesto.
+  filtro_relevancia:
+    - security
+    - cybersecurity
+    - infosec
+    - pentest
+    - devsecops
+    - soc
+    - "red team"
+    - "blue team"
+    - ciberseguridad
+    - hacking
+  fuentes_rss:
+    # Puedes añadir aquí cualquier feed RSS de empleo adicional que tengas
+    # derecho a usar (por ejemplo de un portal con el que tengas acuerdo).
+    # Se filtran igual que RemoteOK: solo pasan ofertas cuyo título contenga
+    # alguna palabra de "filtro_relevancia".
+    - nombre: "We Work Remotely - Programming"
+      url: "https://weworkremotely.com/categories/remote-programming-jobs.rss"
+      categoria: empleo
+    - nombre: "We Work Remotely - DevOps/SysAdmin"
+      url: "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss"
+      categoria: empleo
+  # API pública de RemoteOK (sin API key, con atributo obligatorio de origen).
+  remoteok:
+    enabled: true
+    url: "https://remoteok.com/api"
+  # API pública de Jobicy (sin API key). Filtra por industria exacta, que es
+  # más preciso que buscar palabras dentro del título.
+  jobicy:
+    enabled: true
+    url: "https://jobicy.com/api/v2/remote-jobs?count=100"
+    filtro_industrias:
+      - "Cybersecurity"
+
+# Notificaciones: desactivadas (el usuario ha indicado que no tiene
+# credenciales SMTP ni bot de Telegram). Solo se genera el informe diario.
+notificaciones:
+  enabled: false
