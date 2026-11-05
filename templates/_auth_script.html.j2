@@ -14,7 +14,6 @@
         var ver = inp.type === "password";
         inp.type = ver ? "text" : "password";
         b.setAttribute("aria-pressed", ver ? "true" : "false");
-        b.setAttribute("aria-label", (ver ? "Ocultar" : "Mostrar") + " " + (b.getAttribute("data-nombre") || "contraseña"));
         inp.focus();
       });
     });

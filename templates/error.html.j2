@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ titulo }} — PinguNews</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+</head>
+<body class="auth-body">
+  {% import "_macros.html.j2" as m %}
+  <main class="auth-main" id="contenido">
+    <div class="auth-escena">
+      <div class="auth-pingu" aria-hidden="true">{{ m.pingu(116) }}</div>
+      <div class="auth-card error-card">
+        <p class="auth-marca">Error 404</p>
+        <h1>No encontramos esa página</h1>
+        <p class="auth-sub">Puede que el enlace esté mal escrito o que la página ya no exista.</p>
+        <a class="btn btn-primario btn-grande btn-bloque" href="/">Ir al panel de noticias</a>
+      </div>
+    </div>
+  </main>
+  {% include "_footer.html.j2" %}
+</body>
+</html>

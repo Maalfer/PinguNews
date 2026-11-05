@@ -1,10 +1,12 @@
 {% macro render_item(item, csrf_token, ambito='') %}
-<article class="item" id="item-{{ ambito }}{{ item.hash }}">
-  <a class="titulo" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.titulo }}<span class="sr-only"> (se abre en una pestaña nueva)</span></a>
+{% set idn = ambito ~ item.hash %}
+{% set lg = idioma_item(item) %}
+<article class="item" id="item-{{ idn }}" aria-labelledby="titulo-{{ idn }}">
+  <a class="titulo" href="{{ item.url }}" target="_blank" rel="noopener noreferrer"{% if lg %} lang="{{ lg }}"{% endif %}><span id="titulo-{{ idn }}">{{ item.titulo }}</span><span class="sr-only" lang="es"> (se abre en una pestaña nueva)</span></a>
   <div class="meta">
     <span class="fuente">{{ item.fuente }}</span>
     <span aria-hidden="true">·</span>
-    <span>{{ item.fecha_fmt }}</span>
+    <time datetime="{{ item.fecha }}">{{ item.fecha_fmt }}</time>
     {% if item.autor %}<span aria-hidden="true">·</span><span>{{ item.autor }}</span>{% endif %}
     {% if item.cobertura and item.cobertura > 1 %}
     <span aria-hidden="true">·</span>
@@ -13,19 +15,19 @@
     </span>
     {% endif %}
   </div>
-  {% if item.resumen %}<div class="resumen">{{ item.resumen }}</div>{% endif %}
+  {% if item.resumen %}<div class="resumen"{% if lg %} lang="{{ lg }}"{% endif %}>{{ item.resumen }}</div>{% endif %}
   <div class="acciones-item">
     <form method="post" action="/like/{{ item.hash }}" class="form-accion">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn-accion me-gusta {{ 'activo' if item.le_gusta else '' }}"
-              aria-pressed="{{ 'true' if item.le_gusta else 'false' }}">
+              aria-pressed="{{ 'true' if item.le_gusta else 'false' }}" aria-describedby="titulo-{{ idn }}">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20.5s-7.5-4.6-9.6-9.4C.9 7.6 3.2 4.5 6.4 4.5c2.1 0 3.9 1.1 5.6 3.2 1.7-2.1 3.5-3.2 5.6-3.2 3.2 0 5.5 3.1 4 6.6-2.1 4.8-9.6 9.4-9.6 9.4z"/></svg>
         <span class="sr-only">Me gusta, </span><span>{{ item.likes }}</span>
       </button>
     </form>
     <form method="post" action="/guardar/{{ item.hash }}" class="form-accion">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-      <button type="submit" class="btn-accion {{ 'activo' if item.guardado else '' }}">
+      <button type="submit" class="btn-accion {{ 'activo' if item.guardado else '' }}" aria-describedby="titulo-{{ idn }}">
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
         {% if item.guardado %}Guardado{% else %}Guardar{% endif %}<span class="sr-only"> esta noticia</span>
       </button>

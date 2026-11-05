@@ -6,6 +6,7 @@
 <title>PinguNews</title>
 {% include "_favicon.html.j2" %}
 {% include "_estilos.html.j2" %}
+<noscript><style>.cat-body[hidden]{display:block !important;content-visibility:visible !important}.cat-header{cursor:default}</style></noscript>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -20,7 +21,7 @@
         </div>
         {{ m.auth_area(usuario, csrf_token) }}
       </div>
-      <p class="estado" role="status">
+      <p class="estado">
         {% if ultima_recoleccion %}Última recolección: {{ ultima_recoleccion }}{% else %}Todavía no se ha recolectado nada — pulsa "Actualizar ahora".{% endif %}
         <span class="separador" aria-hidden="true">·</span>
         <strong>{{ total_items }}</strong> ítems en este rango
@@ -35,7 +36,7 @@
                 {% for opcion in opciones_dias %}
                 <li>
                   <a href="?dias={{ opcion }}{{ categorias_qs }}"{% if opcion == dias %} aria-current="page"{% endif %}>
-                    {{ opcion }}d
+                    {{ opcion }}d<span class="sr-only">: {{ 'último día' if opcion == 1 else 'últimos ' ~ opcion ~ ' días' }}</span>
                   </a>
                 </li>
                 {% endfor %}
@@ -43,7 +44,7 @@
             </nav>
             <form method="post" action="/actualizar?dias={{ dias }}{{ categorias_qs }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button class="btn btn-primario" type="submit">↻ Actualizar ahora</button>
+              <button class="btn btn-primario" type="submit"><span aria-hidden="true">↻</span> Actualizar ahora</button>
             </form>
           </div>
         </div>
@@ -65,7 +66,7 @@
                       <li>
                         <label class="chip" title="{{ label }}">
                           <input type="checkbox" name="categorias" value="{{ cat }}" {{ 'checked' if cat in categorias_activas else '' }}>
-                          <span class="chip-txt">{{ label.split(' (')[0] }}</span>
+                          <span class="chip-txt">{{ label.split(' (')[0] | emoji_decorativo }}</span>
                           <span class="chip-n">{{ conteo_por_categoria.get(cat, 0) }}</span>
                         </label>
                       </li>
@@ -216,7 +217,7 @@
               <svg class="ico ico-play" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5l11 7-11 7z"/></svg>
             </button>
           </div>
-          <figure class="frase" aria-live="polite" aria-atomic="true">
+          <figure class="frase" aria-label="Frase motivadora" aria-live="polite" aria-atomic="true">
             <blockquote><p id="frase-texto">{{ f.texto }}</p></blockquote>
             <figcaption id="frase-autor"{% if not f.autor %} hidden{% endif %}>{{ f.autor }}</figcaption>
             <button type="button" class="frase-otra" id="frase-otra" hidden
@@ -232,28 +233,32 @@
   <main class="wrap" id="contenido" tabindex="-1">
     {% if destacados %}
     <section class="destacados">
-      <details class="cat-details" id="sec-destacados" open>
-        <summary class="cat-header">
-          <h2 id="h-destacados">🔥 Lo más comentado</h2>
-          <span class="cat-count">cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
-        </summary>
-        <div class="cat-body">
+      <h2 class="cat-h" id="h-destacados">
+        <button type="button" class="cat-header" id="b-destacados" aria-expanded="true" aria-controls="p-destacados">
+          <span class="cat-titulo"><span aria-hidden="true">🔥</span> Lo más comentado</span>
+          <span class="cat-count"><span class="sr-only">, </span>cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
+        </button>
+      </h2>
+      <div class="cat-body" id="p-destacados">
+        <div class="cat-grid">
           {% for item in destacados %}{{ m.render_item(item, csrf_token, 'd-') }}{% endfor %}
         </div>
-      </details>
+      </div>
     </section>
     {% endif %}
 
     {% for cat, label in categorias_disponibles %}
     {% if cat in categorias_activas %}
     <section class="categoria">
-      <details class="cat-details" id="sec-{{ cat }}">
-        <summary class="cat-header">
+      <h2 class="cat-h" id="h-{{ cat }}">
+        <button type="button" class="cat-header" id="b-{{ cat }}" aria-expanded="false" aria-controls="p-{{ cat }}">
           <span class="dot dot-{{ cat }}" aria-hidden="true"></span>
-          <h2 id="h-{{ cat }}">{{ label }}</h2>
-          <span class="cat-count">{{ conteo_por_categoria.get(cat, 0) }}</span>
-        </summary>
-        <div class="cat-body">
+          <span class="cat-titulo">{{ label | emoji_decorativo }}</span>
+          <span class="cat-count"><span class="sr-only">, </span>{{ conteo_por_categoria.get(cat, 0) }}<span class="sr-only"> noticias</span></span>
+        </button>
+      </h2>
+      <div class="cat-body" id="p-{{ cat }}" hidden="until-found">
+        <div class="cat-grid">
       {% if grupos.get(cat) %}
         {% for item in grupos[cat] %}{{ m.render_item(item, csrf_token) }}{% endfor %}
       {% elif conteo_por_categoria.get(cat, 0) > 0 %}
@@ -262,7 +267,7 @@
         <p class="vacio">Sin ítems en este rango de días.</p>
       {% endif %}
         </div>
-      </details>
+      </div>
     </section>
     {% endif %}
     {% endfor %}
@@ -270,7 +275,7 @@
     {% if total_paginas > 1 %}
     <nav class="paginacion" aria-label="Paginación de resultados">
       {% if pagina > 1 %}
-        <a href="?dias={{ dias }}{{ categorias_qs }}&pagina={{ pagina - 1 }}" rel="prev">← Anterior</a>
+        <a href="?dias={{ dias }}{{ categorias_qs }}&pagina={{ pagina - 1 }}" rel="prev"><span aria-hidden="true">←</span> Anterior</a>
       {% else %}
         <span class="paginacion-deshabilitado" aria-hidden="true">← Anterior</span>
       {% endif %}
@@ -278,7 +283,7 @@
       <span class="paginacion-estado" aria-current="page">Página {{ pagina }} de {{ total_paginas }}</span>
 
       {% if pagina < total_paginas %}
-        <a href="?dias={{ dias }}{{ categorias_qs }}&pagina={{ pagina + 1 }}" rel="next">Siguiente →</a>
+        <a href="?dias={{ dias }}{{ categorias_qs }}&pagina={{ pagina + 1 }}" rel="next">Siguiente <span aria-hidden="true">→</span></a>
       {% else %}
         <span class="paginacion-deshabilitado" aria-hidden="true">Siguiente →</span>
       {% endif %}
@@ -306,18 +311,38 @@
     })();
   </script>
   <script>
-    /* Recuerda qué secciones abriste mientras navegas (paginación, filtros).
-       Por defecto las categorías están cerradas. Sin JS funciona igual. */
+    /* Secciones plegables: botón dentro de un encabezado h2 (aria-expanded +
+       aria-controls). Recuerda lo abierto durante la sesión, abre la sección que
+       contenga el ancla de la URL y se revela con Ctrl+F (hidden="until-found").
+       Sin JavaScript las secciones se muestran abiertas (ver <noscript>). */
     (function () {
       var K = "pingunews-secciones", guardado = {};
       try { guardado = JSON.parse(sessionStorage.getItem(K) || "{}"); } catch (e) {}
-      document.querySelectorAll("details.cat-details").forEach(function (d) {
-        if (typeof guardado[d.id] === "boolean") d.open = guardado[d.id];
-        d.addEventListener("toggle", function () {
-          guardado[d.id] = d.open;
-          try { sessionStorage.setItem(K, JSON.stringify(guardado)); } catch (e) {}
-        });
+      function recuerda(id, abierto) {
+        guardado[id] = abierto;
+        try { sessionStorage.setItem(K, JSON.stringify(guardado)); } catch (e) {}
+      }
+      function poner(boton, abrir, guardar) {
+        var panel = document.getElementById(boton.getAttribute("aria-controls"));
+        boton.setAttribute("aria-expanded", abrir ? "true" : "false");
+        if (abrir) panel.removeAttribute("hidden"); else panel.setAttribute("hidden", "until-found");
+        if (guardar !== false) recuerda(boton.id, abrir);
+      }
+      document.querySelectorAll("button.cat-header").forEach(function (boton) {
+        var panel = document.getElementById(boton.getAttribute("aria-controls"));
+        var inicial = typeof guardado[boton.id] === "boolean" ? guardado[boton.id] : boton.getAttribute("aria-expanded") === "true";
+        poner(boton, inicial, false);
+        boton.addEventListener("click", function () { poner(boton, boton.getAttribute("aria-expanded") !== "true"); });
+        panel.addEventListener("beforematch", function () { boton.setAttribute("aria-expanded", "true"); recuerda(boton.id, true); });
       });
+      if (location.hash.length > 1) {
+        var destino = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        var panelDestino = destino && destino.closest(".cat-body");
+        if (panelDestino && panelDestino.hasAttribute("hidden")) {
+          var b = document.querySelector('[aria-controls="' + panelDestino.id + '"]');
+          if (b) { poner(b, true); destino.scrollIntoView(); }
+        }
+      }
     })();
   </script>
   <script>

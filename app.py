@@ -22,6 +22,8 @@ from urllib.parse import urlencode, urlparse
 import yaml
 from fastapi import FastAPI, Form, Query
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from markupsafe import Markup, escape
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -69,6 +71,30 @@ templates.env.autoescape = True
 templates.env.globals["frase_aleatoria"] = frase_aleatoria
 templates.env.globals["legal"] = LEGAL
 templates.env.globals["anio_actual"] = lambda: datetime.now().year
+
+# Los emojis de las etiquetas son decorativos: se ocultan a los lectores de pantalla.
+_RE_EMOJI_INICIAL = re.compile(r"^([^\w¿¡(\"“«]+)\s*", re.UNICODE)
+
+
+def emoji_decorativo(texto):
+    t = str(texto)
+    m = _RE_EMOJI_INICIAL.match(t)
+    if m and m.group(1).strip():
+        return Markup('<span aria-hidden="true">%s</span> %s') % (m.group(1).strip(), t[m.end():])
+    return escape(t)
+
+
+# Fuentes cuyo contenido está en inglés (para marcarlo con lang="en").
+_FUENTES_EN = ("jobicy", "remoteok", "we work remotely")
+
+
+def idioma_item(item) -> str:
+    fuente = str((item.get("fuente") if hasattr(item, "get") else item["fuente"]) or "").lower()
+    return "en" if any(fuente.startswith(f) for f in _FUENTES_EN) else ""
+
+
+templates.env.filters["emoji_decorativo"] = emoji_decorativo
+templates.env.globals["idioma_item"] = idioma_item
 
 app = FastAPI(title="Panel de ciberseguridad e IT")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -403,6 +429,16 @@ def logout(request: Request, csrf_token: str = Form(...)):
     csrf.exigir_csrf(request, csrf_token)
     request.session.clear()
     return RedirectResponse("/", status_code=303)
+
+
+# ---- Página de error 404 amigable (el resto de errores siguen devolviendo JSON) ----
+
+
+@app.exception_handler(StarletteHTTPException)
+async def error_http(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404 and "text/html" in request.headers.get("accept", ""):
+        return templates.TemplateResponse(request, "error.html.j2", {"titulo": "Página no encontrada"}, status_code=404)
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code, headers=getattr(exc, "headers", None))
 
 
 # ---- Páginas legales ----

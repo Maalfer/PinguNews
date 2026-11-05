@@ -30,7 +30,7 @@
 
   <main class="wrap" id="contenido" tabindex="-1">
     {% if items %}
-      <div class="cat-body">
+      <div class="cat-grid">
         {% for item in items %}{{ m.render_item(item, csrf_token) }}{% endfor %}
       </div>
     {% else %}
