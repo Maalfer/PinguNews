@@ -8,6 +8,7 @@ Luego abrir http://127.0.0.1:8000 en el navegador.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 import re
@@ -94,10 +95,86 @@ def idioma_item(item) -> str:
 
 
 templates.env.filters["emoji_decorativo"] = emoji_decorativo
+
+# ---- Versión (hash) de los ficheros estáticos para la caché larga del navegador ----
+_VERSIONES_ESTATICOS = {}
+
+
+def static_v(nombre: str) -> str:
+    """Huella corta del contenido de un fichero de /static: si cambia, cambia la URL
+    (?v=...) y el navegador descarga la versión nueva; si no, la reutiliza un año."""
+    v = _VERSIONES_ESTATICOS.get(nombre)
+    if v is None:
+        try:
+            v = hashlib.md5((BASE_DIR / "static" / nombre).read_bytes(), usedforsecurity=False).hexdigest()[:10]
+        except OSError:
+            v = "0"
+        _VERSIONES_ESTATICOS[nombre] = v
+    return v
+
+
+# ---- Autores de las fuentes: "noreply@blogger.com (SeguInfo)" -> "SeguInfo" ----
+_RE_AUTOR_EMAIL = re.compile(r"^\S+@\S+\s*\((.+)\)\s*$")
+_RE_SOLO_EMAIL = re.compile(r"^\S+@\S+$")
+
+
+def autor_limpio(autor) -> str:
+    a = str(autor or "").strip()
+    m = _RE_AUTOR_EMAIL.match(a)
+    if m:
+        return m.group(1).strip()
+    return "" if _RE_SOLO_EMAIL.match(a) else a
+
+
+templates.env.globals["static_v"] = static_v
+templates.env.globals["etiqueta_categoria"] = lambda cat: CATEGORIA_LABELS.get(cat, cat).split(" (")[0]
+
+_CSS_TEXTO = {}
+
+
+def css_texto() -> str:
+    """Contenido de estilos.css (se lee una vez y se guarda en memoria)."""
+    if "v" not in _CSS_TEXTO:
+        _CSS_TEXTO["v"] = (BASE_DIR / "static" / "estilos.css").read_text(encoding="utf-8")
+    return _CSS_TEXTO["v"]
+
+
+def css_en_linea(request) -> bool:
+    """Primera visita (o hoja de estilos nueva): el CSS va incrustado para que la
+    primera pintura no espere a una petición extra, y se descarga el fichero
+    cacheable en segundo plano. Después: se usa ese fichero, ya en caché, y no se
+    reenvían 50 KB de CSS en cada página. La marca se guarda en la cookie de sesión."""
+    version = static_v("estilos.css")
+    try:
+        if request.session.get("css_v") == version:
+            return False
+        request.session["css_v"] = version
+    except Exception:
+        return False
+    return True
+
+
+templates.env.globals["css_texto"] = css_texto
+templates.env.globals["css_en_linea"] = css_en_linea
+templates.env.filters["autor_limpio"] = autor_limpio
 templates.env.globals["idioma_item"] = idioma_item
 
 app = FastAPI(title="Panel de ciberseguridad e IT")
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+class EstaticosConCache(StaticFiles):
+    """/static con caché larga: un año e inmutable si la URL lleva ?v=<hash>
+    (la versión cambia sola al cambiar el fichero); un día en el resto."""
+
+    async def get_response(self, path, scope):
+        respuesta = await super().get_response(path, scope)
+        if respuesta.status_code in (200, 304):
+            versionado = b"v=" in scope.get("query_string", b"")
+            respuesta.headers["Cache-Control"] = (
+                "public, max-age=31536000, immutable" if versionado else "public, max-age=86400"
+            )
+        return respuesta
+
+
+app.mount("/static", EstaticosConCache(directory=str(BASE_DIR / "static")), name="static")
 
 # Clave para firmar la cookie de sesión. En producción debe venir de la
 # variable de entorno SESSION_SECRET_KEY (ver .env en el servidor) para que
@@ -247,15 +324,13 @@ def _render_dashboard(
     conteo_por_categoria = {cat: len(lista) for cat, lista in grupos_completos.items()}
     categorias_disponibles = [(cat, CATEGORIA_LABELS[cat]) for cat in CATEGORIA_ORDEN]
 
-    # Paginación: cada sección de categoría se pagina con el mismo número de
-    # página, cortando su propia lista (que ya viene ordenada por relevancia).
-    total_paginas = max(
-        1, math.ceil(max(conteo_por_categoria.values(), default=1) / ITEMS_POR_PAGINA)
-    )
+    # Una única lista con todas las noticias (las categorías se filtran con el
+    # desplegable), de más recientes a más antiguas y paginada en conjunto.
+    ordenadas = sorted(items, key=lambda i: i["fecha"], reverse=True)
+    total_paginas = max(1, math.ceil(len(ordenadas) / ITEMS_POR_PAGINA))
     pagina = min(max(pagina, 1), total_paginas)
     inicio = (pagina - 1) * ITEMS_POR_PAGINA
-    fin = inicio + ITEMS_POR_PAGINA
-    grupos = {cat: lista[inicio:fin] for cat, lista in grupos_completos.items()}
+    noticias = ordenadas[inicio:inicio + ITEMS_POR_PAGINA]
 
     categorias_qs = ""
     if set(categorias_activas) != set(TODAS_LAS_CATEGORIAS):
@@ -277,7 +352,7 @@ def _render_dashboard(
             "categorias_disponibles": categorias_disponibles,
             "categorias_activas": categorias_activas,
             "categorias_qs": categorias_qs,
-            "grupos": grupos,
+            "noticias": noticias,
             "destacados": destacados,
             "destacados_cobertura_minima": DESTACADOS_COBERTURA_MINIMA,
             "conteo_por_categoria": conteo_por_categoria,

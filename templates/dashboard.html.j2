@@ -6,17 +6,18 @@
 <title>PinguNews</title>
 {% include "_favicon.html.j2" %}
 {% include "_estilos.html.j2" %}
-<noscript><style>.cat-body[hidden]{display:block !important;content-visibility:visible !important}.cat-header{cursor:default}</style></noscript>
+<noscript><style>.cat-body{grid-template-rows:1fr !important}.cat-body[hidden]{content-visibility:visible !important;display:grid !important}.cat-body>.cat-grid{opacity:1 !important}.cat-header{cursor:default}</style></noscript>
 </head>
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% import "_macros.html.j2" as m %}
+  {{ m.sprite_iconos() }}
 
   <header class="top">
     <div class="inner">
       <div class="brand-fila">
         <div class="brand">
-          <img class="logo" src="/static/logo.png" alt="" width="64" height="64">
+          <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="64" height="64" fetchpriority="high" decoding="async"></picture>
           <h1>PinguNews</h1>
         </div>
         {{ m.auth_area(usuario, csrf_token) }}
@@ -239,7 +240,7 @@
           <span class="cat-count"><span class="sr-only">, </span>cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
         </button>
       </h2>
-      <div class="cat-body" id="p-destacados">
+      <div class="cat-body abierto" id="p-destacados">
         <div class="cat-grid">
           {% for item in destacados %}{{ m.render_item(item, csrf_token, 'd-') }}{% endfor %}
         </div>
@@ -247,30 +248,23 @@
     </section>
     {% endif %}
 
-    {% for cat, label in categorias_disponibles %}
-    {% if cat in categorias_activas %}
-    <section class="categoria">
-      <h2 class="cat-h" id="h-{{ cat }}">
-        <button type="button" class="cat-header" id="b-{{ cat }}" aria-expanded="false" aria-controls="p-{{ cat }}">
-          <span class="dot dot-{{ cat }}" aria-hidden="true"></span>
-          <span class="cat-titulo">{{ label | emoji_decorativo }}</span>
-          <span class="cat-count"><span class="sr-only">, </span>{{ conteo_por_categoria.get(cat, 0) }}<span class="sr-only"> noticias</span></span>
+    <section class="todas">
+      <h2 class="cat-h" id="h-todas">
+        <button type="button" class="cat-header" id="b-todas" aria-expanded="true" aria-controls="p-todas">
+          <span class="cat-titulo">Todas las noticias</span>
+          <span class="cat-count"><span class="sr-only">, </span>{{ total_items }}<span class="sr-only"> noticias</span></span>
         </button>
       </h2>
-      <div class="cat-body" id="p-{{ cat }}" hidden="until-found">
+      <div class="cat-body abierto" id="p-todas">
         <div class="cat-grid">
-      {% if grupos.get(cat) %}
-        {% for item in grupos[cat] %}{{ m.render_item(item, csrf_token) }}{% endfor %}
-      {% elif conteo_por_categoria.get(cat, 0) > 0 %}
-        <p class="vacio">No hay más resultados en esta página para esta categoría.</p>
-      {% else %}
-        <p class="vacio">Sin ítems en este rango de días.</p>
-      {% endif %}
+          {% if noticias %}
+            {% for item in noticias %}{{ m.render_item(item, csrf_token) }}{% endfor %}
+          {% else %}
+            <p class="vacio">No hay noticias en este rango de días con las categorías elegidas.</p>
+          {% endif %}
         </div>
       </div>
     </section>
-    {% endif %}
-    {% endfor %}
 
     {% if total_paginas > 1 %}
     <nav class="paginacion" aria-label="Paginación de resultados">
@@ -293,198 +287,67 @@
 
   {% include "_footer.html.j2" %}
   <script>
-    /* Mejora progresiva: el desplegable de categorías se cierra al pulsar
-       fuera o con Escape (devolviendo el foco al botón). Sin JS sigue
-       funcionando como <details> nativo. */
-    (function () {
-      var d = document.querySelector("details.dropdown");
-      if (!d) return;
-      document.addEventListener("click", function (e) {
-        if (d.open && !d.contains(e.target)) d.open = false;
-      });
-      d.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && d.open) {
-          d.open = false;
-          d.querySelector("summary").focus();
-        }
-      });
-    })();
-  </script>
-  <script>
     /* Secciones plegables: botón dentro de un encabezado h2 (aria-expanded +
-       aria-controls). Recuerda lo abierto durante la sesión, abre la sección que
-       contenga el ancla de la URL y se revela con Ctrl+F (hidden="until-found").
-       Sin JavaScript las secciones se muestran abiertas (ver <noscript>). */
+       aria-controls). Se abren y cierran con una animación de altura y las
+       tarjetas entran en cascada; recuerda lo abierto durante la sesión, abre la
+       sección que contenga el ancla de la URL y se revela con Ctrl+F
+       (hidden="until-found"). Sin JavaScript las secciones se muestran abiertas. */
     (function () {
       var K = "pingunews-secciones", guardado = {};
       try { guardado = JSON.parse(sessionStorage.getItem(K) || "{}"); } catch (e) {}
+      var reducir = window.matchMedia("(prefers-reduced-motion: reduce)");
+      var oculto = ("onbeforematch" in document.body) ? "until-found" : "";
       function recuerda(id, abierto) {
         guardado[id] = abierto;
         try { sessionStorage.setItem(K, JSON.stringify(guardado)); } catch (e) {}
       }
-      function poner(boton, abrir, guardar) {
-        var panel = document.getElementById(boton.getAttribute("aria-controls"));
-        boton.setAttribute("aria-expanded", abrir ? "true" : "false");
-        if (abrir) panel.removeAttribute("hidden"); else panel.setAttribute("hidden", "until-found");
-        if (guardar !== false) recuerda(boton.id, abrir);
+      function abrir(boton, panel, animar) {
+        clearTimeout(panel._t);
+        boton.setAttribute("aria-expanded", "true");
+        panel.removeAttribute("hidden"); panel.removeAttribute("inert");
+        if (animar && !reducir.matches) {
+          panel.classList.add("anima");
+          void panel.offsetHeight;                      /* fija el estado "cerrado" antes de animar */
+          panel.classList.add("abierto");
+          panel._t = setTimeout(function () { panel.classList.remove("anima"); }, 1100);
+        } else {
+          panel.classList.add("abierto");
+        }
+      }
+      function cerrar(boton, panel, animar) {
+        clearTimeout(panel._t);
+        boton.setAttribute("aria-expanded", "false");
+        panel.setAttribute("inert", "");
+        panel.classList.remove("anima", "abierto");
+        if (animar && !reducir.matches) {
+          panel._t = setTimeout(function () { if (!panel.classList.contains("abierto")) panel.setAttribute("hidden", oculto); }, 560);
+        } else {
+          panel.setAttribute("hidden", oculto);
+        }
       }
       document.querySelectorAll("button.cat-header").forEach(function (boton) {
         var panel = document.getElementById(boton.getAttribute("aria-controls"));
-        var inicial = typeof guardado[boton.id] === "boolean" ? guardado[boton.id] : boton.getAttribute("aria-expanded") === "true";
-        poner(boton, inicial, false);
-        boton.addEventListener("click", function () { poner(boton, boton.getAttribute("aria-expanded") !== "true"); });
-        panel.addEventListener("beforematch", function () { boton.setAttribute("aria-expanded", "true"); recuerda(boton.id, true); });
+        var ahora = boton.getAttribute("aria-expanded") === "true";
+        var deseado = typeof guardado[boton.id] === "boolean" ? guardado[boton.id] : ahora;
+        if (deseado !== ahora) (deseado ? abrir : cerrar)(boton, panel, false);
+        else if (!deseado) panel.setAttribute("hidden", oculto);
+        boton.addEventListener("click", function () {
+          var abrirAhora = boton.getAttribute("aria-expanded") !== "true";
+          (abrirAhora ? abrir : cerrar)(boton, panel, true);
+          recuerda(boton.id, abrirAhora);
+        });
+        panel.addEventListener("beforematch", function () { abrir(boton, panel, false); recuerda(boton.id, true); });
       });
       if (location.hash.length > 1) {
         var destino = document.getElementById(decodeURIComponent(location.hash.slice(1)));
         var panelDestino = destino && destino.closest(".cat-body");
-        if (panelDestino && panelDestino.hasAttribute("hidden")) {
+        if (panelDestino && !panelDestino.classList.contains("abierto")) {
           var b = document.querySelector('[aria-controls="' + panelDestino.id + '"]');
-          if (b) { poner(b, true); destino.scrollIntoView(); }
+          if (b) { abrir(b, panelDestino, false); destino.scrollIntoView(); }
         }
       }
     })();
   </script>
-  <script>
-    /* Mascota: reacciona al clic con una animación al azar, sigue el cursor con
-       los ojos y, de vez en cuando, hace cosas por su cuenta (bostezar, mirar,
-       saltar...). Las acciones automáticas solo ocurren con la pestaña y el
-       pingüino visibles, se pueden pausar con el botón y no se ejecutan si el
-       sistema pide "reducir movimiento". */
-    (function () {
-      var btn = document.getElementById("mascota");
-      if (!btn) return;
-      var svg = btn.querySelector(".pingu");
-      var pausaBtn = document.getElementById("mascota-pausa");
-      var reducir = window.matchMedia("(prefers-reduced-motion: reduce)");
-      var CLIC = [["a-salto", 1150], ["a-giro", 1550], ["a-baile", 1950], ["a-saludo", 2150],
-                  ["a-aleteo", 1550], ["a-sorpresa", 1550], ["a-cosquillas", 1450], ["a-corazones", 2400],
-                  ["a-bostezo", 2900], ["a-mira", 2500], ["a-saltito", 1050], ["a-contoneo", 2700],
-                  ["a-sacude", 1100], ["a-estira", 2300], ["a-dormita", 3400],
-                  ["a-curiosa", 2400], ["a-canta", 2900], ["a-rasca", 2700]];
-      var SOLO = ["a-bostezo", "a-mira", "a-saltito", "a-contoneo", "a-sacude", "a-estira",
-                  "a-dormita", "a-saludo", "a-aleteo", "a-salto", "a-curiosa", "a-canta", "a-rasca"];
-      var DUR = {}, todas = ["a-feliz"];
-      CLIC.forEach(function (a) { DUR[a[0]] = a[1]; todas.push(a[0]); });
-      var tAnim = null, tSolo = null, actual = null, ultima = "", pausado = false, visible = true;
-
-      try { pausado = localStorage.getItem("pingunews-mascota-pausa") === "1"; } catch (e) {}
-
-      function limpiar() { todas.forEach(function (c) { svg.classList.remove(c); }); }
-      function activo() { return !pausado && !reducir.matches && visible && !document.hidden; }
-      function vivo() { svg.classList.toggle("vivo", activo()); }
-      function pintaPausa() {
-        if (!pausaBtn) return;
-        pausaBtn.setAttribute("aria-pressed", pausado ? "true" : "false");
-        pausaBtn.title = pausado ? "Reanudar animaciones automáticas" : "Pausar animaciones automáticas";
-      }
-
-      function reproducir(nombre) {
-        clearTimeout(tAnim);
-        svg.classList.remove("hola"); limpiar();
-        void svg.getBoundingClientRect();           /* reinicia la animación */
-        svg.classList.add(nombre); actual = nombre; ultima = nombre;
-        tAnim = setTimeout(function () { limpiar(); actual = null; programar(); }, DUR[nombre]);
-      }
-      function programar() {
-        clearTimeout(tSolo);
-        if (!activo()) return;
-        tSolo = setTimeout(solo, 7000 + Math.random() * 9000);
-      }
-      function solo() {
-        if (actual || !activo()) { programar(); return; }
-        var n; do { n = SOLO[Math.floor(Math.random() * SOLO.length)]; } while (n === ultima);
-        reproducir(n);
-      }
-      function actualiza() { vivo(); if (activo()) { if (!actual) programar(); } else clearTimeout(tSolo); }
-
-      btn.addEventListener("click", function () {
-        clearTimeout(tAnim); clearTimeout(tSolo);
-        svg.classList.remove("hola"); limpiar();
-        if (reducir.matches) {
-          svg.classList.add("a-feliz"); actual = null;
-          tAnim = setTimeout(limpiar, 2000);
-          return;
-        }
-        var n; do { n = CLIC[Math.floor(Math.random() * CLIC.length)][0]; } while (n === ultima);
-        reproducir(n);
-      });
-
-      if (pausaBtn) {
-        pausaBtn.addEventListener("click", function () {
-          pausado = !pausado;
-          try { localStorage.setItem("pingunews-mascota-pausa", pausado ? "1" : "0"); } catch (e) {}
-          pintaPausa(); actualiza();
-        });
-      }
-
-      document.addEventListener("visibilitychange", actualiza);
-      if (reducir.addEventListener) reducir.addEventListener("change", actualiza);
-      if ("IntersectionObserver" in window) {
-        new IntersectionObserver(function (es) { visible = es[0].isIntersecting; actualiza(); }).observe(btn);
-      }
-
-      /* ojos que siguen al cursor */
-      if (!reducir.matches) {
-        var px = 0, py = 0, raf = 0;
-        var seguir = function () {
-          raf = 0;
-          var r = svg.getBoundingClientRect();
-          var cx = r.left + r.width / 2, cy = r.top + r.height * 0.33;
-          var dx = px - cx, dy = py - cy, d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260);
-          svg.style.setProperty("--ox", (dx / d * 2.6 * k).toFixed(2) + "px");
-          svg.style.setProperty("--oy", (dy / d * 2.2 * k).toFixed(2) + "px");
-        };
-        document.addEventListener("pointermove", function (e) {
-          px = e.clientX; py = e.clientY;
-          if (!raf) raf = requestAnimationFrame(seguir);
-        }, { passive: true });
-      }
-
-      window.pinguReacciona = function (n) { if (!reducir.matches && DUR[n]) reproducir(n); };
-      pintaPausa();
-      setTimeout(function () { svg.classList.remove("hola"); actualiza(); }, 4200);
-      vivo();
-    })();
-  </script>
-  <script>
-    /* Botón "otra frase": pide otra al servidor sin recargar la página. */
-    (function () {
-      var btn = document.getElementById("frase-otra");
-      if (!btn) return;
-      var fig = document.querySelector(".frase");
-      var txt = document.getElementById("frase-texto");
-      var aut = document.getElementById("frase-autor");
-      var reducir = window.matchMedia("(prefers-reduced-motion: reduce)");
-      var ocupado = false;
-      btn.hidden = false;
-
-      function termina() {
-        setTimeout(function () { ocupado = false; btn.classList.remove("girando"); btn.removeAttribute("aria-busy"); }, 500);
-      }
-      btn.addEventListener("click", function () {
-        if (ocupado) return;
-        ocupado = true; btn.classList.add("girando"); btn.setAttribute("aria-busy", "true");
-        fetch("/frase?actual=" + encodeURIComponent(txt.textContent), {
-          headers: { "Accept": "application/json" }, credentials: "same-origin", cache: "no-store"
-        })
-          .then(function (r) { if (!r.ok) throw new Error("http " + r.status); return r.json(); })
-          .then(function (f) {
-            fig.classList.add("cambiando");
-            setTimeout(function () {
-              txt.textContent = f.texto;
-              if (f.autor) { aut.textContent = f.autor; aut.hidden = false; } else { aut.hidden = true; }
-              fig.classList.remove("cambiando");
-            }, reducir.matches ? 0 : 200);
-            if (window.pinguReacciona) {
-              var gestos = ["a-saltito", "a-curiosa", "a-saludo", "a-mira"];
-              window.pinguReacciona(gestos[Math.floor(Math.random() * gestos.length)]);
-            }
-          })
-          .catch(function () { /* se queda la frase actual */ })
-          .then(termina);
-      });
-    })();
-  </script>
+  <script src="/static/panel.js?v={{ static_v('panel.js') }}" defer></script>
 </body>
 </html>

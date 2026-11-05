@@ -10,12 +10,13 @@
 <body>
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
   {% import "_macros.html.j2" as m %}
+  {{ m.sprite_iconos() }}
 
   <header class="top">
     <div class="inner">
       <div class="brand-fila">
         <div class="brand">
-          <img class="logo" src="/static/logo.png" alt="" width="64" height="64">
+          <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="64" height="64" fetchpriority="high" decoding="async"></picture>
           <h1>🔖 Mis guardados</h1>
           <span class="subtitulo">ítems que has guardado para ver más tarde</span>
         </div>
