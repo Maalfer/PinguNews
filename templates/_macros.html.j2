@@ -1,4 +1,4 @@
-{% macro render_item(item) %}
+{% macro render_item(item, csrf_token) %}
 <article class="item">
   <a class="titulo" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.titulo }}</a>
   <div class="meta">
@@ -16,12 +16,14 @@
   {% if item.resumen %}<div class="resumen">{{ item.resumen }}</div>{% endif %}
   <div class="acciones-item">
     <form method="post" action="/like/{{ item.hash }}" class="form-accion">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn-accion me-gusta {{ 'activo' if item.le_gusta else '' }}"
               aria-pressed="{{ 'true' if item.le_gusta else 'false' }}">
         {{ '❤' if item.le_gusta else '🤍' }} <span>{{ item.likes }}</span>
       </button>
     </form>
     <form method="post" action="/guardar/{{ item.hash }}" class="form-accion">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn-accion {{ 'activo' if item.guardado else '' }}"
               aria-pressed="{{ 'true' if item.guardado else 'false' }}">
         {% if item.guardado %}🔖 Guardado{% else %}📑 Guardar{% endif %}
@@ -31,12 +33,13 @@
 </article>
 {% endmacro %}
 
-{% macro auth_area(usuario) %}
+{% macro auth_area(usuario, csrf_token) %}
 <div class="auth-area">
   {% if usuario %}
     <span class="saludo">👤 {{ usuario.nombre_usuario }}</span>
     <a href="/guardados">🔖 Mis guardados</a>
     <form method="post" action="/logout" style="margin:0;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn-enlace">Cerrar sesión</button>
     </form>
   {% else %}

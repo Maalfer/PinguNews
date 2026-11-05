@@ -18,7 +18,7 @@
           <h1>Panel de ciberseguridad &amp; IT</h1>
           <span class="subtitulo">España · resumen de los últimos días</span>
         </div>
-        {{ m.auth_area(usuario) }}
+        {{ m.auth_area(usuario, csrf_token) }}
       </div>
       <p class="estado">
         {% if ultima_recoleccion %}Última recolección: {{ ultima_recoleccion }}{% else %}Todavía no se ha recolectado nada — pulsa "Actualizar ahora".{% endif %}
@@ -40,6 +40,7 @@
               </ul>
             </nav>
             <form method="post" action="/actualizar?dias={{ dias }}{{ categorias_qs }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <button class="btn btn-primario" type="submit">↻ Actualizar ahora</button>
             </form>
           </div>
@@ -88,7 +89,7 @@
         <h2 id="h-destacados">🔥 Lo más comentado</h2>
         <span class="cat-count">cubierto por {{ destacados_cobertura_minima }}+ fuentes</span>
       </div>
-      {% for item in destacados %}{{ m.render_item(item) }}{% endfor %}
+      {% for item in destacados %}{{ m.render_item(item, csrf_token) }}{% endfor %}
     </section>
     {% endif %}
 
@@ -101,7 +102,7 @@
         <span class="cat-count">{{ conteo_por_categoria.get(cat, 0) }}</span>
       </div>
       {% if grupos.get(cat) %}
-        {% for item in grupos[cat] %}{{ m.render_item(item) }}{% endfor %}
+        {% for item in grupos[cat] %}{{ m.render_item(item, csrf_token) }}{% endfor %}
       {% elif conteo_por_categoria.get(cat, 0) > 0 %}
         <p class="vacio">No hay más resultados en esta página para esta categoría.</p>
       {% else %}

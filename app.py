@@ -9,7 +9,9 @@ Luego abrir http://127.0.0.1:8000 en el navegador.
 from __future__ import annotations
 
 import math
+import os
 import secrets
+import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -25,10 +27,15 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 
 import auth
+import csrf
 from classifier import CATEGORIA_LABELS, CATEGORIA_ORDEN
 from collector import ejecutar_recoleccion
 from db import Database
 from utils import SEPARADOR_FUENTES, setup_logging
+
+# "produccion" activa cookies de sesión solo-HTTPS y cabecera HSTS. En local
+# se deja desactivado para poder probar por http://127.0.0.1 sin HTTPS.
+PRODUCCION = os.environ.get("ENTORNO", "local").strip().lower() == "produccion"
 
 BASE_DIR = Path(__file__).parent
 CONFIG_PATH = BASE_DIR / "config" / "config.yaml"
@@ -48,21 +55,79 @@ DB_PATH = str(BASE_DIR / GENERAL.get("db_path", "data/herramienta.db"))
 db = Database(DB_PATH)
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+# IMPORTANTE: Jinja2Templates decide si autoescapar HTML mirando la extensión
+# del archivo (select_autoescape), y nuestras plantillas se llaman
+# "*.html.j2" (no "*.html"), así que NO coincide con su lista y el autoescape
+# queda desactivado por defecto. Como los títulos/resúmenes vienen de fuentes
+# RSS externas (no confiables) y el nombre de usuario lo elige el propio
+# usuario, sin esto cualquier feed o usuario podría inyectar HTML/JS
+# (XSS) en cada página del panel. Se fuerza explícitamente a True.
+templates.env.autoescape = True
 
 app = FastAPI(title="Panel de ciberseguridad e IT")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
-# Clave para firmar la cookie de sesión. Se genera una vez y se guarda en
-# disco para que las sesiones no se invaliden cada vez que se reinicia el
-# servidor. Pensado para uso local (ver README): no hay HTTPS obligatorio ni
-# protección CSRF, porque esto no está pensado para exponerse a internet.
-SECRET_KEY_PATH = BASE_DIR / "data" / ".session_secret"
-if not SECRET_KEY_PATH.exists():
-    SECRET_KEY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SECRET_KEY_PATH.write_text(secrets.token_hex(32), encoding="utf-8")
-SECRET_KEY = SECRET_KEY_PATH.read_text(encoding="utf-8").strip()
+# Clave para firmar la cookie de sesión. En producción debe venir de la
+# variable de entorno SESSION_SECRET_KEY (ver .env en el servidor) para que
+# no cambie entre despliegues (lo que invalidaría todas las sesiones) y para
+# no depender de un fichero en disco. En local, si no se define, se genera
+# una vez y se guarda en data/.session_secret (excluido de git).
+SECRET_KEY = os.environ.get("SESSION_SECRET_KEY")
+if not SECRET_KEY:
+    if PRODUCCION:
+        raise RuntimeError(
+            "Falta la variable de entorno SESSION_SECRET_KEY en producción "
+            "(ENTORNO=produccion). No se genera una automáticamente para no "
+            "invalidar las sesiones de todo el mundo en cada despliegue."
+        )
+    secret_key_path = BASE_DIR / "data" / ".session_secret"
+    if not secret_key_path.exists():
+        secret_key_path.parent.mkdir(parents=True, exist_ok=True)
+        secret_key_path.write_text(secrets.token_hex(32), encoding="utf-8")
+    SECRET_KEY = secret_key_path.read_text(encoding="utf-8").strip()
 
-app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, same_site="lax")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SECRET_KEY,
+    same_site="lax",
+    https_only=PRODUCCION,
+    max_age=14 * 24 * 3600,  # 14 días
+)
+
+
+@app.middleware("http")
+async def cabeceras_seguridad(request: Request, call_next):
+    """Cabeceras de seguridad básicas. nginx añade las suyas en producción
+    (ver despliegue), pero se repiten aquí para que la app sea segura por sí
+    sola incluso si se accede a ella directamente (p. ej. en local)."""
+    respuesta = await call_next(request)
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
+    respuesta.headers["X-Frame-Options"] = "DENY"
+    respuesta.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if PRODUCCION:
+        respuesta.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    return respuesta
+
+
+# ---- Límite de intentos de login/registro (mitiga fuerza bruta) ----
+
+_INTENTOS_RECIENTES: dict[str, list[float]] = defaultdict(list)
+INTENTOS_MAX = 8
+INTENTOS_VENTANA_SEGUNDOS = 300
+
+
+def _ip_cliente(request: Request) -> str:
+    return request.client.host if request.client else "desconocida"
+
+
+def limite_intentos_superado(clave: str) -> bool:
+    ahora = time.time()
+    intentos = _INTENTOS_RECIENTES[clave]
+    intentos[:] = [t for t in intentos if ahora - t < INTENTOS_VENTANA_SEGUNDOS]
+    if len(intentos) >= INTENTOS_MAX:
+        return True
+    intentos.append(ahora)
+    return False
 
 OPCIONES_DIAS = DASHBOARD_CFG.get("opciones_dias", [1, 3, 7, 14, 30])
 DIAS_POR_DEFECTO = DASHBOARD_CFG.get("dias_por_defecto", 3)
@@ -165,6 +230,7 @@ def _render_dashboard(
         "dashboard.html.j2",
         {
             "usuario": usuario,
+            "csrf_token": csrf.token_csrf(request),
             "dias": dias,
             "opciones_dias": OPCIONES_DIAS,
             "categorias_disponibles": categorias_disponibles,
@@ -194,8 +260,14 @@ def dashboard(
 
 
 @app.post("/actualizar")
-def actualizar(dias: int = DIAS_POR_DEFECTO, categorias: Optional[List[str]] = Query(default=None)):
+def actualizar(
+    request: Request,
+    csrf_token: str = Form(...),
+    dias: int = DIAS_POR_DEFECTO,
+    categorias: Optional[List[str]] = Query(default=None),
+):
     """Lanza una recolección nueva (bloqueante) y vuelve al panel."""
+    csrf.exigir_csrf(request, csrf_token)
     logger.info("Recolección manual solicitada desde el panel web")
     ejecutar_recoleccion(CONFIG, db)
 
@@ -211,20 +283,35 @@ NOMBRE_USUARIO_MIN = 3
 PASSWORD_MIN = 8
 
 
+ERROR_DEMASIADOS_INTENTOS = "Demasiados intentos. Espera unos minutos y vuelve a probar."
+
+
 @app.get("/registro", response_class=HTMLResponse)
 def registro_form(request: Request):
     if usuario_actual(request):
         return RedirectResponse("/", status_code=303)
-    return templates.TemplateResponse(request, "registro.html.j2", {"error": None, "usuario": None})
+    return templates.TemplateResponse(
+        request, "registro.html.j2", {"error": None, "usuario": None, "csrf_token": csrf.token_csrf(request)}
+    )
 
 
 @app.post("/registro", response_class=HTMLResponse)
 def registro_submit(
     request: Request,
+    csrf_token: str = Form(...),
     nombre_usuario: str = Form(...),
     password: str = Form(...),
     password2: str = Form(...),
 ):
+    csrf.exigir_csrf(request, csrf_token)
+    if limite_intentos_superado(f"registro:{_ip_cliente(request)}"):
+        return templates.TemplateResponse(
+            request,
+            "registro.html.j2",
+            {"error": ERROR_DEMASIADOS_INTENTOS, "usuario": None, "csrf_token": csrf.token_csrf(request)},
+            status_code=429,
+        )
+
     nombre_usuario = nombre_usuario.strip()
     error = None
     if len(nombre_usuario) < NOMBRE_USUARIO_MIN:
@@ -238,7 +325,10 @@ def registro_submit(
 
     if error:
         return templates.TemplateResponse(
-            request, "registro.html.j2", {"error": error, "usuario": None}, status_code=400
+            request,
+            "registro.html.j2",
+            {"error": error, "usuario": None, "csrf_token": csrf.token_csrf(request)},
+            status_code=400,
         )
 
     salt = auth.generar_salt()
@@ -254,11 +344,24 @@ def registro_submit(
 def login_form(request: Request):
     if usuario_actual(request):
         return RedirectResponse("/", status_code=303)
-    return templates.TemplateResponse(request, "login.html.j2", {"error": None, "usuario": None})
+    return templates.TemplateResponse(
+        request, "login.html.j2", {"error": None, "usuario": None, "csrf_token": csrf.token_csrf(request)}
+    )
 
 
 @app.post("/login", response_class=HTMLResponse)
-def login_submit(request: Request, nombre_usuario: str = Form(...), password: str = Form(...)):
+def login_submit(
+    request: Request, csrf_token: str = Form(...), nombre_usuario: str = Form(...), password: str = Form(...)
+):
+    csrf.exigir_csrf(request, csrf_token)
+    if limite_intentos_superado(f"login:{_ip_cliente(request)}"):
+        return templates.TemplateResponse(
+            request,
+            "login.html.j2",
+            {"error": ERROR_DEMASIADOS_INTENTOS, "usuario": None, "csrf_token": csrf.token_csrf(request)},
+            status_code=429,
+        )
+
     usuario = db.obtener_usuario_por_nombre(nombre_usuario.strip())
     credenciales_validas = usuario and auth.verificar_password(
         password, usuario["password_hash"], usuario["salt"]
@@ -267,7 +370,11 @@ def login_submit(request: Request, nombre_usuario: str = Form(...), password: st
         return templates.TemplateResponse(
             request,
             "login.html.j2",
-            {"error": "Usuario o contraseña incorrectos.", "usuario": None},
+            {
+                "error": "Usuario o contraseña incorrectos.",
+                "usuario": None,
+                "csrf_token": csrf.token_csrf(request),
+            },
             status_code=400,
         )
 
@@ -277,7 +384,8 @@ def login_submit(request: Request, nombre_usuario: str = Form(...), password: st
 
 
 @app.post("/logout")
-def logout(request: Request):
+def logout(request: Request, csrf_token: str = Form(...)):
+    csrf.exigir_csrf(request, csrf_token)
     request.session.clear()
     return RedirectResponse("/", status_code=303)
 
@@ -286,19 +394,21 @@ def logout(request: Request):
 
 
 @app.post("/guardar/{item_hash}")
-def alternar_guardado(request: Request, item_hash: str):
+def alternar_guardado(request: Request, item_hash: str, csrf_token: str = Form(...)):
     usuario = usuario_actual(request)
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    csrf.exigir_csrf(request, csrf_token)
     db.alternar_guardado(usuario["id"], item_hash)
     return RedirectResponse(_destino_tras_accion(request), status_code=303)
 
 
 @app.post("/like/{item_hash}")
-def alternar_like(request: Request, item_hash: str):
+def alternar_like(request: Request, item_hash: str, csrf_token: str = Form(...)):
     usuario = usuario_actual(request)
     if not usuario:
         return RedirectResponse("/login", status_code=303)
+    csrf.exigir_csrf(request, csrf_token)
     db.alternar_like(usuario["id"], item_hash)
     return RedirectResponse(_destino_tras_accion(request), status_code=303)
 
@@ -318,6 +428,7 @@ def ver_guardados(request: Request):
         {
             "usuario": usuario,
             "items": items,
+            "csrf_token": csrf.token_csrf(request),
             "twitter_activo": CONFIG.get("twitter", {}).get("enabled", False),
         },
     )

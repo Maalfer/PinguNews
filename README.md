@@ -133,10 +133,17 @@ Heurísticos (sin LLM ni coste), según lo pedido: la clasificación es por coin
 ### Cuentas, "me gusta" y guardados
 Autenticación propia con usuario/contraseña (sin servicios externos tipo Google/GitHub login, que requerirían credenciales de API que no tienes). Detalles:
 - Las contraseñas se guardan con **PBKDF2-HMAC-SHA256** (600.000 iteraciones, salt aleatorio por usuario) — nunca en texto plano. Ver `auth.py`.
-- La sesión se guarda en una **cookie firmada** (no en el servidor), con una clave que se genera sola la primera vez y se guarda en `data/.session_secret` — no la compartas ni la subas a git (`.gitignore` ya la excluye).
+- La sesión se guarda en una **cookie firmada** (no en el servidor). La clave para firmarla sale de la variable de entorno `SESSION_SECRET_KEY`; en local, si no la defines, se genera sola y se guarda en `data/.session_secret` (excluido de git). **En producción es obligatoria** (ver sección de despliegue) — si falta, la app ni arranca.
 - **"Me gusta"**: el contador que ves en cada noticia es la suma de todos los usuarios que la han marcado, no solo la tuya.
 - **"Guardar"**: privado por usuario — solo tú ves lo que has guardado, en `/guardados`.
-- **Importante — esto es para uso local, no para publicarlo en internet tal cual**: no hay HTTPS, ni protección CSRF, ni límite de intentos de login, ni verificación de email. Para un uso personal en tu propio ordenador (`127.0.0.1`) es razonable; si alguna vez quieres exponerlo a la red, habría que añadir esas protecciones antes.
+
+### Seguridad (CSRF, sesiones, XSS)
+- **CSRF**: todos los formularios que cambian algo (login, registro, logout, actualizar, dar like, guardar) llevan un token por sesión (`csrf.py`) que el servidor valida antes de aceptar la petición. Sin esto, cualquier página externa podría incluir un formulario oculto que, aprovechando que tu navegador ya tiene la cookie de sesión, le diera like a cosas o cerrara tu sesión sin que lo supieras.
+- **Cookies de sesión**: `HttpOnly` (no accesibles desde JavaScript), `SameSite=Lax`, caducan a los 14 días, y en producción (`ENTORNO=produccion`) además `Secure` (solo se envían por HTTPS).
+- **Cabeceras de seguridad** (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, y `Strict-Transport-Security` en producción) añadidas por la propia app, además de las que pone nginx en el servidor.
+- **Límite de intentos** en `/login` y `/registro` (8 intentos cada 5 minutos por IP) para dificultar la fuerza bruta — simple, en memoria, sin dependencias nuevas.
+- **Fallo real encontrado y corregido**: `Jinja2Templates` decide si autoescapar HTML mirando la extensión del fichero, y nuestras plantillas se llaman `*.html.j2` (no `*.html`), así que no coincidían con su lista y **el autoescape estaba desactivado en toda la app**. Como los títulos de las noticias vienen de fuentes RSS externas y el nombre de usuario lo elige el propio usuario, esto era una vulnerabilidad XSS real. Se fuerza explícitamente `templates.env.autoescape = True` en `app.py`. Verificado insertando un título con `<script>` y comprobando que sale escapado en el HTML real.
+- Lo que **no** se ha implementado (fuera de alcance razonable para esta app): verificación de email, 2FA, rotación de claves, protección contra reutilización de contraseñas filtradas. Para una app de uso personal/comunidad pequeña, lo de arriba es un nivel razonable.
 
 ### Notificaciones
 No configuradas (sin SMTP ni Telegram disponibles). Si en el futuro quieres añadirlas, el punto de enganche natural es justo después de `db.guardar(nuevos)` en `collector.py`, filtrando `nuevos` por algún criterio de relevancia (p. ej. ítems de categoría `ciberseguridad` con palabras como "cve", "zero-day", "ransomware").

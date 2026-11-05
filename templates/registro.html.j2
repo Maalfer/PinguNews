@@ -13,6 +13,7 @@
     <h1>Crear cuenta</h1>
     {% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
     <form method="post" action="/registro">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="campo">
         <label for="nombre_usuario">Usuario (mínimo 3 caracteres)</label>
         <input type="text" id="nombre_usuario" name="nombre_usuario" autocomplete="username" minlength="3" required autofocus>
