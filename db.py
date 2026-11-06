@@ -211,6 +211,10 @@ class Database:
 
     # ---- Guardados ("ver más tarde") ----
 
+    def existe_item(self, item_hash: str) -> bool:
+        with self._connect() as conn:
+            return conn.execute("SELECT 1 FROM items WHERE hash = ?", (item_hash,)).fetchone() is not None
+
     def alternar_guardado(self, usuario_id: int, item_hash: str) -> bool:
         """Guarda o quita de guardados. Devuelve True si ha quedado guardado."""
         with self._connect() as conn:

@@ -13,6 +13,8 @@ import math
 import os
 import re
 import secrets
+import threading
+import unicodedata
 import time
 from collections import defaultdict
 from datetime import datetime
@@ -127,6 +129,7 @@ def autor_limpio(autor) -> str:
 
 
 templates.env.globals["static_v"] = static_v
+templates.env.filters["url_segura"] = lambda u: u if isinstance(u, str) and re.match(r"https?://", u.strip(), re.I) else "#"
 templates.env.globals["etiqueta_categoria"] = lambda cat: CATEGORIA_LABELS.get(cat, cat).split(" (")[0]
 
 _CSS_TEXTO = {}
@@ -159,7 +162,7 @@ templates.env.globals["css_en_linea"] = css_en_linea
 templates.env.filters["autor_limpio"] = autor_limpio
 templates.env.globals["idioma_item"] = idioma_item
 
-app = FastAPI(title="Panel de ciberseguridad e IT")
+app = FastAPI(title="Panel de ciberseguridad e IT", docs_url=None, redoc_url=None, openapi_url=None)
 class EstaticosConCache(StaticFiles):
     """/static con caché larga: un año e inmutable si la URL lleva ?v=<hash>
     (la versión cambia sola al cambiar el fichero); un día en el resto."""
@@ -206,15 +209,25 @@ app.add_middleware(
 
 @app.middleware("http")
 async def cabeceras_seguridad(request: Request, call_next):
-    """Cabeceras de seguridad básicas. nginx añade las suyas en producción
-    (ver despliegue), pero se repiten aquí para que la app sea segura por sí
-    sola incluso si se accede a ella directamente (p. ej. en local)."""
+    """Cabeceras de seguridad (CSP con nonce por petición, etc.). HSTS lo añade
+    nginx. Las páginas dinámicas no se guardan en cachés compartidas."""
+    request.state.csp_nonce = secrets.token_urlsafe(16)
     respuesta = await call_next(request)
-    respuesta.headers["X-Content-Type-Options"] = "nosniff"
-    respuesta.headers["X-Frame-Options"] = "DENY"
-    respuesta.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    if PRODUCCION:
-        respuesta.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains"
+    h = respuesta.headers
+    h["X-Content-Type-Options"] = "nosniff"
+    h["X-Frame-Options"] = "DENY"
+    h["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    h["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    h["Cross-Origin-Opener-Policy"] = "same-origin"
+    h["Cross-Origin-Resource-Policy"] = "same-origin"
+    if not request.url.path.startswith("/static/"):
+        h["Content-Security-Policy"] = (
+            "default-src 'self'; script-src 'self' 'nonce-%s'; style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; "
+            "base-uri 'none'; form-action 'self'; frame-ancestors 'none'" % request.state.csp_nonce
+        )
+        if "cache-control" not in h:
+            h["Cache-Control"] = "private, no-cache"
     return respuesta
 
 
@@ -229,8 +242,33 @@ def _ip_cliente(request: Request) -> str:
     return request.client.host if request.client else "desconocida"
 
 
+_FALLOS_USUARIO: dict[str, list[float]] = defaultdict(list)
+FALLOS_USUARIO_MAX = 12
+FALLOS_USUARIO_VENTANA = 900
+
+
+def _fallos_usuario_excedidos(nombre: str) -> bool:
+    ahora = time.time()
+    lista = _FALLOS_USUARIO[nombre.lower()[:64]]
+    lista[:] = [t for t in lista if ahora - t < FALLOS_USUARIO_VENTANA]
+    return len(lista) >= FALLOS_USUARIO_MAX
+
+
+def _registrar_fallo_usuario(nombre: str) -> None:
+    _FALLOS_USUARIO[nombre.lower()[:64]].append(time.time())
+
+
+def _limpiar_limites() -> None:
+    ahora = time.time()
+    for d, v in ((_INTENTOS_RECIENTES, INTENTOS_VENTANA_SEGUNDOS), (_FALLOS_USUARIO, FALLOS_USUARIO_VENTANA)):
+        for k in [k for k, l in d.items() if not l or ahora - l[-1] > v]:
+            d.pop(k, None)
+
+
 def limite_intentos_superado(clave: str) -> bool:
     ahora = time.time()
+    if len(_INTENTOS_RECIENTES) > 5000 or len(_FALLOS_USUARIO) > 5000:
+        _limpiar_limites()
     intentos = _INTENTOS_RECIENTES[clave]
     intentos[:] = [t for t in intentos if ahora - t < INTENTOS_VENTANA_SEGUNDOS]
     if len(intentos) >= INTENTOS_MAX:
@@ -297,9 +335,37 @@ def _destino_tras_accion(request: Request, item_hash: str = "") -> str:
     return destino
 
 
+BUSQUEDA_MAX_CHARS = 100
+BUSQUEDA_MAX_TERMINOS = 8
+
+
+def _normalizar_busqueda(texto: str) -> str:
+    """Minúsculas y sin acentos, para que 'seguridad' encuentre 'Seguridad' y
+    'vulnerabilidad' encuentre 'vulnerabilidád'."""
+    sin_acentos = unicodedata.normalize("NFKD", texto or "")
+    return "".join(c for c in sin_acentos if not unicodedata.combining(c)).casefold()
+
+
+def _filtrar_por_busqueda(items: List[dict], q: str) -> List[dict]:
+    """Se queda con los ítems que contienen TODAS las palabras buscadas (en
+    título, resumen, fuente o autor), sin distinguir mayúsculas ni acentos."""
+    terminos = _normalizar_busqueda(q).split()[:BUSQUEDA_MAX_TERMINOS]
+    if not terminos:
+        return items
+    resultado = []
+    for it in items:
+        pajar = _normalizar_busqueda(
+            " ".join(str(it.get(k) or "") for k in ("titulo", "resumen", "fuente", "autor"))
+        )
+        if all(t in pajar for t in terminos):
+            resultado.append(it)
+    return resultado
+
+
 def _render_dashboard(
-    request: Request, dias: int, categorias_activas: List[str], pagina: int
+    request: Request, dias: int, categorias_activas: List[str], pagina: int, q: str = ""
 ) -> HTMLResponse:
+    q = " ".join((q or "").split())[:BUSQUEDA_MAX_CHARS]
     dias = dias if dias in OPCIONES_DIAS else DIAS_POR_DEFECTO
     categorias_activas = [c for c in categorias_activas if c in TODAS_LAS_CATEGORIAS] or TODAS_LAS_CATEGORIAS
     usuario = usuario_actual(request)
@@ -308,6 +374,8 @@ def _render_dashboard(
     # noticia) y luego por fecha, ver db.items_recientes: lo más relevante
     # siempre queda primero, también después de paginar.
     items = db.items_recientes(dias, categorias_activas)
+    if q:
+        items = _filtrar_por_busqueda(items, q)
     _enriquecer_items(items, usuario)
 
     # Lo más comentado: cubierto por varias fuentes independientes, buena
@@ -335,6 +403,9 @@ def _render_dashboard(
     categorias_qs = ""
     if set(categorias_activas) != set(TODAS_LAS_CATEGORIAS):
         categorias_qs = "&" + urlencode({"categorias": categorias_activas}, doseq=True)
+    if q:
+        # La búsqueda viaja en todos los enlaces (rango, paginación, actualizar).
+        categorias_qs += "&" + urlencode({"q": q})
 
     ultima_recoleccion_raw = db.get_meta("ultima_recoleccion")
     ultima_recoleccion = None
@@ -348,6 +419,7 @@ def _render_dashboard(
             "usuario": usuario,
             "csrf_token": csrf.token_csrf(request),
             "dias": dias,
+            "q": q,
             "opciones_dias": OPCIONES_DIAS,
             "categorias_disponibles": categorias_disponibles,
             "categorias_activas": categorias_activas,
@@ -371,8 +443,13 @@ def dashboard(
     dias: int = DIAS_POR_DEFECTO,
     categorias: Optional[List[str]] = Query(default=None),
     pagina: int = Query(default=1, ge=1),
+    q: str = Query(default="", max_length=300),
 ):
-    return _render_dashboard(request, dias, categorias or TODAS_LAS_CATEGORIAS, pagina)
+    return _render_dashboard(request, dias, categorias or TODAS_LAS_CATEGORIAS, pagina, q)
+
+
+_RECOLECCION = {"ultima": 0.0, "lock": threading.Lock()}
+RECOLECCION_ENFRIAMIENTO = 300
 
 
 @app.post("/actualizar")
@@ -381,15 +458,26 @@ def actualizar(
     csrf_token: str = Form(...),
     dias: int = DIAS_POR_DEFECTO,
     categorias: Optional[List[str]] = Query(default=None),
+    q: str = Query(default="", max_length=300),
 ):
     """Lanza una recolección nueva (bloqueante) y vuelve al panel."""
     csrf.exigir_csrf(request, csrf_token)
-    logger.info("Recolección manual solicitada desde el panel web")
-    ejecutar_recoleccion(CONFIG, db)
+    # Una recolección a la vez y como mucho una cada 5 minutos para todo el
+    # servicio: evita usar el botón para saturar la app o las fuentes externas.
+    ahora = time.time()
+    if ahora - _RECOLECCION["ultima"] >= RECOLECCION_ENFRIAMIENTO and _RECOLECCION["lock"].acquire(blocking=False):
+        try:
+            _RECOLECCION["ultima"] = ahora
+            logger.info("Recolección manual solicitada desde el panel web")
+            ejecutar_recoleccion(CONFIG, db)
+        finally:
+            _RECOLECCION["lock"].release()
 
     query = {"dias": dias}
     if categorias:
         query["categorias"] = categorias
+    if q.strip():
+        query["q"] = " ".join(q.split())[:BUSQUEDA_MAX_CHARS]
     return RedirectResponse(url=f"/?{urlencode(query, doseq=True)}", status_code=303)
 
 
@@ -397,6 +485,8 @@ def actualizar(
 
 NOMBRE_USUARIO_MIN = 3
 PASSWORD_MIN = 8
+PASSWORD_MAX = 128
+_HASH_FALSO = None  # se calcula en el primer login para igualar tiempos
 
 
 ERROR_DEMASIADOS_INTENTOS = "Demasiados intentos. Espera unos minutos y vuelve a probar."
@@ -432,8 +522,12 @@ def registro_submit(
     error = None
     if len(nombre_usuario) < NOMBRE_USUARIO_MIN:
         error = f"El usuario debe tener al menos {NOMBRE_USUARIO_MIN} caracteres."
+    elif not re.fullmatch(r"[A-Za-z0-9_.-]{3,32}", nombre_usuario):
+        error = "El usuario solo puede tener letras, números, punto, guion y guion bajo (máximo 32)."
     elif len(password) < PASSWORD_MIN:
         error = f"La contraseña debe tener al menos {PASSWORD_MIN} caracteres."
+    elif len(password) > PASSWORD_MAX:
+        error = f"La contraseña no puede superar los {PASSWORD_MAX} caracteres."
     elif password != password2:
         error = "Las contraseñas no coinciden."
     elif db.obtener_usuario_por_nombre(nombre_usuario):
@@ -478,11 +572,29 @@ def login_submit(
             status_code=429,
         )
 
-    usuario = db.obtener_usuario_por_nombre(nombre_usuario.strip())
-    credenciales_validas = usuario and auth.verificar_password(
-        password, usuario["password_hash"], usuario["salt"]
-    )
+    nombre_usuario = nombre_usuario.strip()
+    if len(nombre_usuario) > 64 or len(password) > PASSWORD_MAX or _fallos_usuario_excedidos(nombre_usuario):
+        return templates.TemplateResponse(
+            request,
+            "login.html.j2",
+            {"error": ERROR_DEMASIADOS_INTENTOS if len(nombre_usuario) <= 64 and len(password) <= PASSWORD_MAX
+                      else "Usuario o contraseña incorrectos.",
+             "usuario": None, "csrf_token": csrf.token_csrf(request)},
+            status_code=429 if len(nombre_usuario) <= 64 and len(password) <= PASSWORD_MAX else 400,
+        )
+    usuario = db.obtener_usuario_por_nombre(nombre_usuario)
+    if usuario:
+        credenciales_validas = auth.verificar_password(password, usuario["password_hash"], usuario["salt"])
+    else:
+        # mismo coste que con usuario real: no se puede deducir si existe por el tiempo
+        global _HASH_FALSO
+        if _HASH_FALSO is None:
+            _sal = auth.generar_salt()
+            _HASH_FALSO = (auth.hash_password("x" * 12, _sal), _sal)
+        auth.verificar_password(password, _HASH_FALSO[0], _HASH_FALSO[1])
+        credenciales_validas = False
     if not credenciales_validas:
+        _registrar_fallo_usuario(nombre_usuario)
         return templates.TemplateResponse(
             request,
             "login.html.j2",
@@ -563,6 +675,11 @@ def otra_frase(actual: str = Query("", max_length=400)):
 
 # ---- Guardar para más tarde / likes ----
 
+def _hash_valido(item_hash: str) -> bool:
+    return bool(re.fullmatch(r"[A-Za-z0-9_-]{1,128}", item_hash)) and db.existe_item(item_hash)
+
+
+
 
 @app.post("/guardar/{item_hash}")
 def alternar_guardado(request: Request, item_hash: str, csrf_token: str = Form(...)):
@@ -570,6 +687,8 @@ def alternar_guardado(request: Request, item_hash: str, csrf_token: str = Form(.
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     csrf.exigir_csrf(request, csrf_token)
+    if not _hash_valido(item_hash):
+        return RedirectResponse("/", status_code=303)
     db.alternar_guardado(usuario["id"], item_hash)
     return RedirectResponse(_destino_tras_accion(request, item_hash), status_code=303)
 
@@ -580,6 +699,8 @@ def alternar_like(request: Request, item_hash: str, csrf_token: str = Form(...))
     if not usuario:
         return RedirectResponse("/login", status_code=303)
     csrf.exigir_csrf(request, csrf_token)
+    if not _hash_valido(item_hash):
+        return RedirectResponse("/", status_code=303)
     db.alternar_like(usuario["id"], item_hash)
     return RedirectResponse(_destino_tras_accion(request, item_hash), status_code=303)
 

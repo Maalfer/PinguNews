@@ -2,7 +2,7 @@
 {% set idn = ambito ~ item.hash %}
 {% set lg = idioma_item(item) %}
 <article class="item" id="item-{{ idn }}" aria-labelledby="titulo-{{ idn }}">
-  <a class="titulo" href="{{ item.url }}" target="_blank" rel="noopener noreferrer"{% if lg %} lang="{{ lg }}"{% endif %}><span id="titulo-{{ idn }}">{{ item.titulo }}</span><span class="sr-only" lang="es"> (se abre en una pestaña nueva)</span></a>
+  <a class="titulo" href="{{ item.url | url_segura }}" target="_blank" rel="noopener noreferrer"{% if lg %} lang="{{ lg }}"{% endif %}><span id="titulo-{{ idn }}">{{ item.titulo }}</span><span class="sr-only" lang="es"> (se abre en una pestaña nueva)</span></a>
   <div class="meta">
     <span class="cat-tag"><span class="sr-only">Categoría: </span>{{ etiqueta_categoria(item.categoria) | emoji_decorativo }}</span>
     <span class="fuente">{{ item.fuente }}</span>
@@ -62,8 +62,8 @@
 </div>
 {% endmacro %}
 
-{% macro pingu(ancho=120) %}
-<svg class="pingu hola" viewBox="0 0 200 250" width="{{ ancho }}" height="{{ (ancho * 1.25) | round | int }}" aria-hidden="true" focusable="false">
+{% macro pingu(ancho=120, clase='hola') %}
+<svg class="pingu {{ clase }}" viewBox="0 0 200 250" width="{{ ancho }}" height="{{ (ancho * 1.25) | round | int }}" aria-hidden="true" focusable="false">
                 <defs>
                   <linearGradient id="gCuerpo" gradientUnits="userSpaceOnUse" x1="100" y1="22" x2="100" y2="238">
                     <stop class="sb0" offset="0"/><stop class="sb1" offset=".5"/><stop class="sb2" offset="1"/>

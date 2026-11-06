@@ -11,7 +11,18 @@
   {% import "_macros.html.j2" as m %}
   <main class="auth-main" id="contenido">
     <div class="auth-escena">
-      <div class="auth-pingu" aria-hidden="true">{{ m.pingu(116) }}</div>
+      {% set f = frase_aleatoria() %}
+      <aside class="auth-lado">
+        <figure class="auth-pensar" aria-label="Frase motivadora">
+          <blockquote><p id="bq-texto">{{ f.texto }}</p></blockquote>
+          <figcaption id="bq-autor"{% if not f.autor %} hidden{% endif %}>{{ f.autor }}</figcaption>
+          <button type="button" class="bq-otra" id="bq-otra" hidden aria-label="Mostrar otra frase">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/></svg>
+          </button>
+          <span class="auth-pensar-cola" aria-hidden="true"><i></i><i></i></span>
+        </figure>
+        <div class="auth-pingu" aria-hidden="true">{{ m.pingu(116) }}</div>
+      </aside>
 
       <div class="auth-card">
         <p class="auth-marca">PinguNews</p>

@@ -4,6 +4,41 @@ Recopila automáticamente contenido reciente en español de ciberseguridad,
 hacking, empleo del sector y noticias de IT/desarrollo, y lo muestra en un
 panel web (FastAPI) con lo de los últimos días, sin tener que buscarlo a mano.
 
+## Capturas
+
+### Panel principal
+![Panel principal de PinguNews](docs/img/panel.png)
+
+Vista pública del panel (sin iniciar sesión). De arriba abajo:
+
+- **Cabecera**: logo y nombre de la app a la izquierda; a la derecha los botones **Iniciar sesión** y **Crear cuenta**.
+- **Rango de fechas** (`1d · 3d · 7d · 15d · 30d`): cuánto hacia atrás se muestran noticias. En la captura está activo **15d**, el valor por defecto.
+- **Categorías**: desplegable con las categorías activas (aquí "5 de 5 seleccionadas"): Ciberseguridad, Tendencias del sector, Empleo, Desarrollo/IT y Actualidad.
+- **↻ Actualizar ahora**: lanza una recolección de las fuentes RSS sin usar la terminal.
+- **Mascota y frase del día**: el pingüino, que reacciona al clic, y una frase motivadora (en la captura, de Fénelon) con botón para pedir otra y botón de pausa de las animaciones.
+- **🔥 Lo más comentado**: noticias cubiertas por **2 o más fuentes** a la vez (insignia "2 fuentes"), una señal gratuita de relevancia. Cada tarjeta muestra título, categoría, fuente, fecha y resumen.
+
+### Inicio de sesión
+![Pantalla de inicio de sesión](docs/img/login.png)
+
+Pantalla **"Bienvenido de nuevo"**: formulario con usuario y contraseña (con botón para mostrarla/ocultarla), botón **Entrar** y acceso a **Crear una cuenta**. A la izquierda, la mascota con una frase en un bocadillo de pensamiento y el botón **Volver al panel**. Tener cuenta permite dar "me gusta" y guardar noticias para después; navegar y buscar no requiere cuenta.
+
+### Mis guardados
+![Sección Mis guardados](docs/img/guardados.png)
+
+Vista de un usuario con la sesión iniciada (aquí `mario`). En la cabecera aparecen su avatar y nombre, el acceso **Mis guardados** y **Cerrar sesión**. La página lista las noticias guardadas con el botón **Guardado** activo y el contador de "me gusta" (♡), y enlaza con **Volver al panel**. Es privada: cada usuario solo ve las suyas. Al pie, el footer con **Aviso legal**, **Privacidad**, **Cookies** y el enlace a GitHub.
+
+## Buscador de noticias
+
+Encima de los filtros hay un cuadro **"Buscar noticias"** para filtrar el panel por palabras:
+
+- Busca en **título, resumen, fuente y autor**.
+- **No distingue mayúsculas ni acentos**: `vulnerabilidad`, `VULNERABILIDAD` y `vulnerabilidád` dan lo mismo.
+- Con varias palabras (`debian apt`) deben aparecer **todas** en la misma noticia.
+- Se combina con el rango de días y las categorías, y **se conserva** al cambiar de rango, de categoría, de página o al pulsar "Actualizar ahora". El botón **Limpiar** quita la búsqueda.
+- El título de la sección pasa a "Resultados para «…»" y el contador muestra cuántas coinciden; si no hay ninguna, se indica con un mensaje.
+- Es un parámetro de URL (`/?q=debian&dias=30`), así que una búsqueda se puede guardar o compartir como enlace. Se filtra en el servidor, el texto se escapa en la plantilla (sin XSS) y se limita a 100 caracteres y 8 palabras.
+
 ## Instalación
 
 ```bash
@@ -45,6 +80,7 @@ Hay dos partes independientes: **recolectar** (guarda en SQLite) y **visualizar*
 
 Abre **http://127.0.0.1:8000** en el navegador. Desde ahí puedes:
 - Elegir cuántos días hacia atrás ver (botones 1/3/7/15/30 días; por defecto 15).
+- **Buscar por palabras** en el cuadro "Buscar noticias" (ver sección más arriba).
 - Filtrar por categoría (Ciberseguridad, 📺 Tendencias del sector, Empleo, Desarrollo/IT, Actualidad) con las casillas.
 - Pulsar **"↻ Actualizar ahora"** para lanzar una recolección nueva sin usar la terminal (tarda unos segundos; la página se recarga sola con lo nuevo).
 - Crear una cuenta / iniciar sesión (arriba a la derecha) para **dar "me gusta"** a las noticias y **guardarlas para ver más tarde** (sección "🔖 Mis guardados"). Sin iniciar sesión puedes ver todo igualmente, solo que esos botones te mandan a iniciar sesión.

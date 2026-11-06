@@ -66,6 +66,28 @@ keywords:
     - blue team
     - soc
     - incibe
+    # Sinónimos en inglés: desde 06/11/2026 hay fuentes en inglés (ver
+    # rss_feeds más abajo) cuyos titulares no contienen ninguna palabra de la
+    # lista en español de arriba. Sin esto, classifier.clasificar() puede
+    # colar un titular de seguridad bajo "desarrollo_it" solo porque contiene
+    # alguna palabra genérica como "cloud" o "software" (ver README).
+    - vulnerability
+    - vulnerabilities
+    - exploited
+    - exploitation
+    - breach
+    - breached
+    - hacked
+    - hacker
+    - flaw
+    - rootkit
+    - backdoor
+    - attacker
+    - threat actor
+    - data leak
+    - cyberattack
+    - kernel exploit
+    - privilege escalation
   # Noticias sobre el estado del sector en general (no ofertas concretas de
   # empleo, que van en "empleo"): despidos, crisis, pero también buenas
   # noticias como crecimiento o inversión. Pensada para tener material que
@@ -187,6 +209,24 @@ rss_feeds:
   - nombre: "Channel Partner"
     url: "https://www.channelpartner.es/feed/"
     categoria: tendencias_sector
+  # Fuentes en inglés: añadidas el 06/11/2026 porque las noticias grandes de
+  # ciberseguridad internacional (CVEs críticos, exploits de kernel, campañas
+  # de ransomware) rompen primero en estos medios y a veces los sitios en
+  # español solo publican un refrito days/semanas después, o directamente no
+  # las cubren. Sin estas fuentes el panel se queda ciego a ese tipo de
+  # noticias aunque sean las más relevantes del día. Verificadas manualmente
+  # (curl + comprobación de robots.txt para bots de Claude/Anthropic) el
+  # 06/11/2026. darkreading.com se probó y se descartó: su robots.txt
+  # bloquea explícitamente a ClaudeBot/Claude-Web/Anthropic-ai.
+  - nombre: "The Hacker News"
+    url: "https://feeds.feedburner.com/TheHackersNews"
+    categoria: ciberseguridad
+  - nombre: "BleepingComputer"
+    url: "https://www.bleepingcomputer.com/feed/"
+    categoria: ciberseguridad
+  - nombre: "Krebs on Security"
+    url: "https://krebsonsecurity.com/feed/"
+    categoria: ciberseguridad
 
 # Fuentes de empleo. LinkedIn no se incluye: su scraping requiere login y
 # contraviene sus Términos de Servicio, por lo que no es fiable ni legal

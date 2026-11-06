@@ -14,13 +14,17 @@
         inp.type = ver ? "text" : "password";
         b.setAttribute("aria-pressed", ver ? "true" : "false");
         inp.focus();
+        actualiza();
       });
     });
 
     function actualiza() {
       if (!svg) return;
-      var a = document.activeElement;
-      svg.classList.toggle("tapa", !!(a && a.hasAttribute("data-pw") && a.type === "password"));
+      var a = document.activeElement, inp = null;
+      if (a && a.hasAttribute && a.hasAttribute("data-pw")) inp = a;
+      else if (a && a.classList && a.classList.contains("btn-ojo")) inp = document.getElementById(a.getAttribute("data-for"));
+      svg.classList.toggle("tapa", !!(inp && inp.type === "password"));
+      svg.classList.toggle("reojo", !!(inp && inp.type === "text"));
     }
     document.addEventListener("focusin", actualiza);
     document.addEventListener("focusout", function () { setTimeout(actualiza, 0); });
@@ -29,6 +33,7 @@
       var px = 0, py = 0, raf = 0;
       var seguir = function () {
         raf = 0;
+        if (svg.classList.contains("tapa") || svg.classList.contains("reojo")) return;
         var r = svg.getBoundingClientRect();
         var cx = r.left + r.width / 2, cy = r.top + r.height * 0.33;
         var dx = px - cx, dy = py - cy, d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / 260);
@@ -39,5 +44,26 @@
         px = e.clientX; py = e.clientY;
         if (!raf) raf = requestAnimationFrame(seguir);
       }, { passive: true });
+    }
+  
+    /* Otra frase en el bocadillo */
+    var otra = document.getElementById("bq-otra"), txt = document.getElementById("bq-texto"),
+        aut = document.getElementById("bq-autor");
+    if (otra && txt && aut && window.fetch) {
+      otra.hidden = false;
+      var fig = txt.closest(".auth-pensar"), ocupado = false;
+      otra.addEventListener("click", function () {
+        if (ocupado) return; ocupado = true;
+        fetch("/frase?actual=" + encodeURIComponent(txt.textContent.slice(0, 400)), { headers: { Accept: "application/json" } })
+          .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+          .then(function (d) {
+            fig.classList.add("cambia");
+            setTimeout(function () {
+              txt.textContent = d.texto; aut.textContent = d.autor || ""; aut.hidden = !d.autor;
+              fig.classList.remove("cambia"); ocupado = false;
+            }, reducir.matches ? 0 : 260);
+          })
+          .catch(function () { ocupado = false; });
+      });
     }
   })();

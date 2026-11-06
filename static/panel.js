@@ -151,3 +151,52 @@
           .then(termina);
       });
     })();
+/* "↻ Actualizar ahora": el formulario se envía de forma normal (no es AJAX,
+       la página recarga al terminar), pero mientras el servidor recopila
+       -puede tardar varios segundos con tantas fuentes- se muestra una capa a
+       pantalla completa con el pingüino "investigando" para que quede claro
+       que la app está trabajando y no parezca que se ha quedado colgada. */
+    (function () {
+      var form = document.getElementById("form-actualizar");
+      var overlay = document.getElementById("overlay-actualizando");
+      if (!form || !overlay) return;
+      var boton = form.querySelector("button[type=submit]");
+      var enviando = false;
+
+      form.addEventListener("submit", function () {
+        if (enviando) return;
+        enviando = true;
+        if (boton) boton.disabled = true;
+        overlay.hidden = false;
+        try { document.querySelector("main").inert = true; } catch (e) {}
+        requestAnimationFrame(function () { overlay.classList.add("visible"); });
+      });
+
+      /* Si el usuario vuelve con el botón "atrás" y el navegador restaura la
+         página desde la caché (bfcache), la capa no debe quedarse pegada en
+         pantalla ni el botón bloqueado. */
+      window.addEventListener("pageshow", function (e) {
+        if (!e.persisted) return;
+        enviando = false;
+        if (boton) boton.disabled = false;
+        overlay.classList.remove("visible");
+        overlay.hidden = true;
+        try { document.querySelector("main").inert = false; } catch (e2) {}
+      });
+    })();
+/* Las fechas de cada noticia llegan del servidor en UTC (es la zona de la
+       recolección); se reescriben aquí a la hora local de quien la esté
+       viendo, que puede estar en cualquier huso horario. El atributo
+       datetime ya trae el ISO-8601 completo con el offset, así que no hace
+       falta tocar el servidor. Sin JavaScript se queda la hora UTC original,
+       que sigue siendo correcta, solo que no ajustada. */
+    (function () {
+      var nodos = document.querySelectorAll("time[datetime]");
+      if (!nodos.length) return;
+      function pad(n) { return n < 10 ? "0" + n : "" + n; }
+      nodos.forEach(function (t) {
+        var d = new Date(t.getAttribute("datetime"));
+        if (isNaN(d.getTime())) return;
+        t.textContent = pad(d.getDate()) + "/" + pad(d.getMonth() + 1) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+      });
+    })();

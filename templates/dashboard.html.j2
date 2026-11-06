@@ -22,17 +22,24 @@
         </div>
         {{ m.auth_area(usuario, csrf_token) }}
       </div>
-      <p class="estado">
-        {% if ultima_recoleccion %}Última recolección: {{ ultima_recoleccion }}{% else %}Todavía no se ha recolectado nada — pulsa "Actualizar ahora".{% endif %}
-        <span class="separador" aria-hidden="true">·</span>
-        <strong>{{ total_items }}</strong> ítems en este rango
-      </p>
 
       <div class="panel-controles">
-        <div class="grupo-control grupo-rango">
-          <span class="grupo-control-titulo" id="titulo-rango">Rango de fechas</span>
-          <div class="fila-rango">
-            <nav class="dias-selector" aria-labelledby="titulo-rango">
+        <div class="grupo-control grupo-filtros">
+          <form class="buscador" role="search" method="get" action="/">
+            <label class="grupo-control-titulo" for="buscar">Buscar noticias</label>
+            <div class="buscador-fila">
+              <input type="hidden" name="dias" value="{{ dias }}">
+              {% if categorias_activas | length != categorias_disponibles | length %}{% for c in categorias_activas %}<input type="hidden" name="categorias" value="{{ c }}">{% endfor %}{% endif %}
+              <input class="buscador-input" id="buscar" type="search" name="q" value="{{ q }}" maxlength="100"
+                     placeholder="Palabras del título, resumen o fuente…" autocomplete="off" enterkeyhint="search">
+              <button class="btn btn-primario" type="submit">Buscar</button>
+              {% if q %}<a class="btn-ghost" href="/?dias={{ dias }}{{ categorias_qs.replace('&q=' ~ (q | urlencode), '') }}">Limpiar</a>{% endif %}
+            </div>
+          </form>
+          <div class="filtros-grid">
+            <div class="filtro">
+              <span class="grupo-control-titulo" id="titulo-rango">Rango de fechas</span>
+              <nav class="dias-selector" aria-labelledby="titulo-rango">
               <ul>
                 {% for opcion in opciones_dias %}
                 <li>
@@ -43,16 +50,10 @@
                 {% endfor %}
               </ul>
             </nav>
-            <form method="post" action="/actualizar?dias={{ dias }}{{ categorias_qs }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button class="btn btn-primario" type="submit"><span aria-hidden="true">↻</span> Actualizar ahora</button>
-            </form>
-          </div>
-        </div>
-
-        <div class="grupo-control grupo-categorias">
-          <span class="grupo-control-titulo" id="titulo-cats">Categorías</span>
-          <details class="dropdown">
+            </div>
+            <div class="filtro">
+              <span class="grupo-control-titulo" id="titulo-cats">Categorías</span>
+              <details class="dropdown">
             <summary class="btn-ghost dropdown-btn" aria-describedby="titulo-cats">
               {{ categorias_activas | length }} de {{ categorias_disponibles | length }} seleccionadas
             </summary>
@@ -61,6 +62,7 @@
                 <fieldset>
                   <legend class="grupo-control-titulo">Elige qué categorías mostrar</legend>
                   <input type="hidden" name="dias" value="{{ dias }}">
+                  {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
                   <div class="fila-categorias">
                     <ul class="lista-categorias">
                       {% for cat, label in categorias_disponibles %}
@@ -75,13 +77,19 @@
                     </ul>
                     <div class="fila-aplicar">
                       <button class="btn btn-primario" type="submit">Aplicar</button>
-                      <a class="btn-ghost" href="/?dias={{ dias }}">Ver todas</a>
+                      <a class="btn-ghost" href="/?dias={{ dias }}{% if q %}&amp;q={{ q | urlencode }}{% endif %}">Ver todas</a>
                     </div>
                   </div>
                 </fieldset>
               </form>
             </div>
           </details>
+            </div>
+            <form class="filtros-actualizar" id="form-actualizar" method="post" action="/actualizar?dias={{ dias }}{{ categorias_qs }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="btn btn-primario" type="submit"><span aria-hidden="true">↻</span> Actualizar ahora</button>
+            </form>
+          </div>
         </div>
 
         {% set f = frase_aleatoria() %}
@@ -251,7 +259,7 @@
     <section class="todas">
       <h2 class="cat-h" id="h-todas">
         <button type="button" class="cat-header" id="b-todas" aria-expanded="true" aria-controls="p-todas">
-          <span class="cat-titulo">Todas las noticias</span>
+          <span class="cat-titulo">{% if q %}Resultados para «{{ q }}»{% else %}Todas las noticias{% endif %}</span>
           <span class="cat-count"><span class="sr-only">, </span>{{ total_items }}<span class="sr-only"> noticias</span></span>
         </button>
       </h2>
@@ -260,7 +268,7 @@
           {% if noticias %}
             {% for item in noticias %}{{ m.render_item(item, csrf_token) }}{% endfor %}
           {% else %}
-            <p class="vacio">No hay noticias en este rango de días con las categorías elegidas.</p>
+            <p class="vacio">{% if q %}Ninguna noticia coincide con «{{ q }}» en este rango y categorías. Prueba con otra palabra o amplía los días.{% else %}No hay noticias en este rango de días con las categorías elegidas.{% endif %}</p>
           {% endif %}
         </div>
       </div>
@@ -286,7 +294,7 @@
   </main>
 
   {% include "_footer.html.j2" %}
-  <script>
+  <script nonce="{{ request.state.csp_nonce }}">
     /* Secciones plegables: botón dentro de un encabezado h2 (aria-expanded +
        aria-controls). Se abren y cierran con una animación de altura y las
        tarjetas entran en cascada; recuerda lo abierto durante la sesión, abre la
@@ -349,5 +357,26 @@
     })();
   </script>
   <script src="/static/panel.js?v={{ static_v('panel.js') }}" defer></script>
+
+  <!-- Pantalla completa mostrada mientras "↻ Actualizar ahora" recopila
+       noticias nuevas (petición normal al servidor, sin AJAX: el envío del
+       formulario sigue su curso y esta capa solo se ve encima mientras la
+       página espera la respuesta). Oculta por defecto; panel.js la muestra. -->
+  <div class="overlay-actualizando" id="overlay-actualizando" hidden>
+    <div class="overlay-actualizando-caja" role="status" aria-live="assertive">
+      <div class="overlay-pingu-caja">
+        {{ m.pingu(190, 'vivo a-investiga') }}
+        <svg class="overlay-lupa" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <circle cx="26" cy="26" r="16" fill="var(--bg-card)" opacity=".6"/>
+          <circle cx="26" cy="26" r="16" fill="none" stroke="var(--accent)" stroke-width="5"/>
+          <ellipse cx="20" cy="19" rx="5" ry="3" fill="#fff" opacity=".55" transform="rotate(-30 20 19)"/>
+          <line x1="38" y1="38" x2="56" y2="56" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p class="overlay-titulo">Buscando noticias nuevas<span class="overlay-puntos" aria-hidden="true"></span></p>
+      <p class="overlay-subtitulo">Repasando ciberseguridad, empleo e IT en todas las fuentes…</p>
+      <div class="overlay-barra" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
 </body>
 </html>

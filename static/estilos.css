@@ -857,3 +857,231 @@ button.cat-header:active{transform:scale(.995)}
 @keyframes k-item-entra{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){h2.cat-h,button.cat-header,button.cat-header::after,.cat-body,.cat-body>.cat-grid{transition:none}.cat-body.anima .cat-grid>.item{animation:none}}
 .cat-tag{font-size:.72rem;font-weight:700;letter-spacing:.02em;padding:2px 9px;border:1px solid var(--border);border-radius:999px;color:var(--text-muted);background:var(--bg);white-space:nowrap}
+
+/* ---- Panel de controles: filtros en una fila + mascota ---- */
+.grupo-filtros{display:flex;align-items:center;justify-content:center;padding:22px 18px}
+.filtros-grid{display:grid;grid-template-columns:auto auto;gap:16px 26px;justify-content:center;align-items:end}
+.filtro{display:flex;flex-direction:column;align-items:center;min-width:0}
+.filtro>.grupo-control-titulo{width:100%;text-align:center;margin-bottom:10px}
+.filtro nav.dias-selector ul{min-height:48px;align-items:center;flex-wrap:nowrap}
+.filtro nav.dias-selector li{flex:1 1 auto;min-width:0}
+.filtro nav.dias-selector a{min-width:0;padding-left:10px;padding-right:10px}
+.filtro summary.dropdown-btn{min-height:48px;padding:0 20px}
+.filtro details.dropdown{display:flex;flex-direction:column;align-items:center}
+.filtros-actualizar{grid-column:1/-1;margin:0}
+.filtros-actualizar .btn{width:100%;min-height:46px}
+.dropdown-panel,.dropdown-panel .grupo-control-titulo{text-align:left}
+@media (max-width:640px){
+.filtros-grid{grid-template-columns:minmax(0,1fr);width:100%;max-width:340px;gap:18px}
+.filtro nav.dias-selector,.filtro nav.dias-selector ul{width:100%}
+.filtro nav.dias-selector ul{justify-content:space-between}
+.filtro details.dropdown{width:100%;align-items:stretch}
+.filtro summary.dropdown-btn{width:100%;justify-content:space-between}
+}
+@media (min-width:900px){
+.panel-controles{display:block}
+.panel-controles>.grupo-control+.grupo-control{border-left:0;border-top:1px solid var(--border)}
+.dropdown-panel{left:50%;right:auto;transform:translateX(-50%)}
+}
+@media (min-width:1100px){
+.panel-controles{display:grid;grid-template-columns:minmax(540px,1.05fr) minmax(0,1fr);align-items:stretch;min-height:204px}
+.panel-controles>.grupo-control+.grupo-control{border-top:0;border-left:1px solid var(--border)}
+.panel-controles>.grupo-frase{padding-left:22px;padding-right:22px}
+}
+
+/* ---- Acceso: pingüino al lado del formulario con bocadillo de pensamiento ---- */
+.auth-lado{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:340px;margin:0 auto 14px}
+.auth-escena .auth-pingu{width:150px;margin:0}
+.auth-pensar{position:relative;margin:0 0 38px;padding:18px 22px 16px;width:100%;text-align:center;background:var(--bg-card);border:1.5px solid var(--border);border-radius:30px;box-shadow:var(--auth-sombra)}
+.auth-pensar blockquote{margin:0}
+.auth-pensar p{margin:0;font-size:1rem;line-height:1.5;font-style:italic;color:var(--text);overflow-wrap:anywhere;transition:opacity .25s ease}
+.auth-pensar figcaption{margin-top:8px;font-size:.84rem;font-weight:600;color:var(--text-muted);transition:opacity .25s ease}
+.auth-pensar.cambia p,.auth-pensar.cambia figcaption{opacity:0}
+.bq-otra{position:absolute;top:-12px;right:-6px;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:0;color:var(--text-muted);background:var(--bg-card);border:1.5px solid var(--border);border-radius:50%;cursor:pointer;transition:color .15s,border-color .15s,transform .4s}
+.bq-otra[hidden]{display:none}
+.bq-otra:hover{color:var(--text);border-color:var(--text-muted)}
+.bq-otra:active{transform:rotate(180deg)}
+.bq-otra:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.bq-otra .ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.auth-pensar-cola{position:absolute;left:50%;bottom:-4px;width:0;height:0;transform:translateX(-50%)}
+.auth-pensar-cola i{position:absolute;display:block;border-radius:50%;background:var(--bg-card);border:1.5px solid var(--border);box-shadow:var(--auth-sombra)}
+.auth-pensar-cola i:nth-child(1){width:16px;height:16px;left:-8px;top:6px}
+.auth-pensar-cola i:nth-child(2){width:9px;height:9px;left:2px;top:24px}
+@media (min-width:880px){
+.auth-escena{max-width:940px;display:grid;grid-template-columns:minmax(280px,340px) minmax(0,440px);column-gap:64px;justify-content:center;align-items:start}
+.auth-lado{grid-column:1;grid-row:1/3;align-self:center;margin:0}
+.auth-escena .auth-card{grid-column:2;grid-row:1}
+.auth-escena .auth-volver{grid-column:2;grid-row:2}
+.auth-escena .auth-pingu{width:190px}
+.auth-pensar{padding:22px 26px 20px}
+.auth-pensar p{font-size:1.08rem}
+}
+@media (max-width:879px){.auth-pensar{margin-bottom:38px}.auth-pensar p{font-size:.95rem}.auth-escena .auth-pingu{width:120px}}
+@media (prefers-reduced-motion:reduce){.auth-pensar p,.auth-pensar figcaption,.bq-otra{transition:none}}
+
+/* Contraseña visible: el pingüino se tapa un ojo y mira de reojo hacia el formulario */
+.auth-pingu .pingu.reojo .p-fl-i{transform:rotate(-166deg)}
+.auth-pingu .pingu.reojo .p-fl-d{transform:rotate(8deg)}
+.auth-pingu .pingu.reojo .p-cabeza{transform:rotate(4deg)}
+.auth-pingu .pingu.reojo .p-pupila{transform:translate(3.4px,.6px)}
+@media (max-width:879px){.auth-pingu .pingu.reojo .p-pupila{transform:translate(2.2px,2.6px)}}
+
+/* ---- Acceso: encajar en la pantalla sin scroll innecesario ---- */
+body.auth-body{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+body.auth-body .auth-main{flex:1 0 auto;min-height:0;padding:20px 16px}
+body.auth-body footer.pie{margin-top:0;padding-top:12px;padding-bottom:12px}
+.auth-escena .auth-card{padding:26px 30px 22px}
+.auth-escena .auth-card h1{margin-bottom:4px}
+.auth-sub{margin-bottom:18px}
+.auth-escena .campo{margin-bottom:14px}
+.auth-escena .campo label{margin-bottom:5px}
+.auth-escena .campo input{height:46px}
+.campo-ayuda{margin-top:4px}
+.auth-escena .btn-grande{min-height:48px;margin-top:4px}
+.auth-separador{margin:16px 0 10px}
+.auth-escena .auth-enlace{margin-bottom:8px}
+.auth-escena .auth-volver{margin-top:12px}
+@media (min-width:880px){
+.auth-escena{align-items:center}
+.auth-escena .auth-card{grid-row:1/3}
+.auth-lado{grid-row:1}
+.auth-escena .auth-volver{grid-column:1;grid-row:2;margin:4px 0 0}
+}
+@media (min-width:880px) and (max-height:760px){
+.auth-escena .auth-card{padding:20px 28px 18px}
+.auth-escena .auth-card h1{font-size:1.5rem}
+.auth-sub{margin-bottom:14px}
+.auth-escena .campo{margin-bottom:10px}
+.auth-escena .campo input{height:44px}
+.auth-separador{margin:12px 0 8px}
+}
+@media (max-width:879px){
+.auth-lado{flex-direction:row-reverse;align-items:center;gap:18px;max-width:440px;margin:0 auto 14px}
+.auth-pensar{flex:1;min-width:0;margin:0;padding:12px 16px 10px;border-radius:22px}
+.auth-pensar p{font-size:.9rem;line-height:1.4}
+.auth-pensar figcaption{margin-top:4px;font-size:.8rem}
+.auth-escena .auth-pingu{flex:0 0 auto;width:78px;margin:0}
+.auth-pensar-cola{left:0;top:50%;bottom:auto;transform:none}
+.auth-pensar-cola i:nth-child(1){width:14px;height:14px;left:-13px;top:-2px}
+.auth-pensar-cola i:nth-child(2){width:8px;height:8px;left:-22px;top:10px}
+}
+@media (max-width:480px){
+body.auth-body .auth-main{padding:12px 16px}
+.auth-escena .auth-card{padding:22px 18px 18px}
+.auth-escena .auth-card h1{font-size:1.4rem}
+.auth-sub{font-size:.9rem;margin-bottom:14px}
+}
+@media (max-width:480px){
+.auth-escena .campo{margin-bottom:10px}
+.auth-escena .campo label{margin-bottom:4px;font-size:.86rem}
+.auth-escena .campo input{height:44px}
+.campo-ayuda{margin-top:3px;font-size:.78rem}
+.auth-escena .btn-grande{min-height:46px}
+.auth-separador{margin:12px 0 8px}
+.auth-escena .auth-volver{margin-top:8px}
+body.auth-body footer.pie{padding-top:8px;padding-bottom:8px}
+body.auth-body .pie-inner{column-gap:12px;row-gap:0}
+}
+@media (max-width:879px) and (max-height:780px){
+.auth-marca{display:none}
+.auth-lado{margin-bottom:10px}
+}
+@media (max-width:480px){
+.auth-marca{display:none}
+.auth-escena .auth-card{padding-top:18px}
+}
+
+/* ---- Pantalla completa: "↻ Actualizar ahora" recopilando noticias ---- */
+.overlay-actualizando {
+position: fixed; inset: 0; z-index: 9999;
+display: flex; align-items: center; justify-content: center; padding: 24px;
+background: color-mix(in srgb, var(--bg) 85%, transparent);
+backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+opacity: 0; transition: opacity .25s ease;
+}
+.overlay-actualizando[hidden] { display: none; }
+.overlay-actualizando.visible { opacity: 1; }
+.overlay-actualizando-caja {
+display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center;
+max-width: 320px; transform: translateY(10px) scale(.96); transition: transform .3s ease;
+}
+.overlay-actualizando.visible .overlay-actualizando-caja { transform: translateY(0) scale(1); }
+.overlay-pingu-caja { position: relative; width: clamp(150px, 42vw, 210px); margin-bottom: 4px; }
+.overlay-lupa {
+position: absolute; width: 36%; top: 2%; right: -8%; transform-origin: 65% 65%;
+filter: drop-shadow(0 3px 6px rgba(0,0,0,.28));
+animation: k-lupa-barrido 2.6s ease-in-out infinite;
+}
+.overlay-titulo { font-size: 1.1rem; font-weight: 700; margin: 2px 0; }
+.overlay-subtitulo { color: var(--text-muted); font-size: .875rem; margin: 0; }
+.overlay-puntos::after {
+content: "..."; display: inline-block; width: 1.3em; text-align: left; overflow: hidden;
+animation: k-overlay-puntos 1.4s steps(4) infinite;
+}
+.overlay-barra {
+width: 170px; height: 5px; border-radius: 999px; background: var(--border);
+overflow: hidden; margin-top: 16px;
+}
+.overlay-barra span {
+display: block; height: 100%; width: 35%; border-radius: 999px; background: var(--accent);
+animation: k-overlay-barra 1.8s ease-in-out infinite;
+}
+@keyframes k-overlay-puntos { from { width: 0; } to { width: 1.3em; } }
+@keyframes k-overlay-barra { 0% { transform: translateX(-100%); } 100% { transform: translateX(290%); } }
+/* Sincronizada con k-inv-cab/k-inv-ojos (misma duración y mismos puntos 25/75%):
+   la lupa barre hacia el mismo lado que mira el pingüino en cada momento, para
+   que lea como "está inspeccionando con la lupa", no como dos animaciones
+   sueltas a la vez. */
+@keyframes k-lupa-barrido {
+0%, 100% { transform: translate(0, 0) rotate(-4deg); }
+25% { transform: translate(-15px, 5px) rotate(-11deg); }
+75% { transform: translate(13px, -4px) rotate(7deg); }
+}
+
+/* Pose "investigando" del pingüino: variante en bucle infinito (a diferencia
+   del resto de gestos de la mascota, que duran una vez y paran) porque no
+   sabemos cuánto va a tardar la recolección real.
+   Ritmo pensado para que parezca que lee con calma, no que tiembla: el barrido
+   de cabeza/ojos/lupa es el gesto principal y va lento (4.8s); el balanceo del
+   cuerpo y las aletas es secundario y algo más vivo (3.2s), pero ya no comparte
+   duración con el barrido principal como en la primera versión (3s y 1.9s a la
+   vez se notaba frenético y descoordinado). */
+.pingu.a-investiga .p-cabeza { animation: k-inv-cab 4.8s ease-in-out infinite; }
+.pingu.a-investiga .p-mirada { animation: k-inv-ojos 4.8s ease-in-out infinite; }
+.pingu.a-investiga .p-cejas path { animation: k-inv-cejas 4.8s ease-in-out infinite; }
+.pingu.a-investiga .p-respira { animation: k-inv-cuerpo 3.2s ease-in-out infinite; }
+.pingu.a-investiga .p-fl-i { animation: k-inv-fl-i 3.2s ease-in-out infinite; }
+.pingu.a-investiga .p-fl-d { animation: k-inv-fl-d 3.2s ease-in-out infinite; }
+@keyframes k-inv-cab {
+0%, 100% { transform: rotate(0) translateY(0); }
+25% { transform: rotate(-9deg) translateY(-1px); }
+75% { transform: rotate(9deg) translateY(-1px); }
+}
+@keyframes k-inv-ojos {
+0%, 100% { transform: translateX(0); }
+25% { transform: translateX(-3.6px); }
+75% { transform: translateX(3.6px); }
+}
+@keyframes k-inv-cejas { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6px); } }
+@keyframes k-inv-cuerpo { 0%, 100% { transform: translateY(0) scale(1,1); } 50% { transform: translateY(-2px) scale(1.015,1.02); } }
+@keyframes k-inv-fl-i { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(10deg); } }
+@keyframes k-inv-fl-d { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-10deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+.overlay-actualizando, .overlay-actualizando-caja { transition: none; }
+.overlay-lupa, .overlay-barra span, .overlay-puntos::after,
+.pingu.a-investiga .p-cabeza, .pingu.a-investiga .p-mirada, .pingu.a-investiga .p-cejas path,
+.pingu.a-investiga .p-respira, .pingu.a-investiga .p-fl-i, .pingu.a-investiga .p-fl-d {
+animation: none !important;
+}
+}
+
+/* Buscador de noticias */
+.buscador { margin: 0 0 16px; }
+.buscador .grupo-control-titulo { display: block; }
+.buscador-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.buscador-input {
+flex: 1 1 220px; min-width: 0; font: inherit; font-size: 0.95rem; padding: 10px 16px;
+border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); color: var(--text);
+}
+.buscador-input::placeholder { color: var(--text-muted); }

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 from time import mktime
 from typing import List
@@ -46,7 +47,9 @@ def recopilar(feeds_config: List[dict], keywords: dict, lookback_hours: int) -> 
                 entradas_en_ventana += 1
 
                 titulo = getattr(entry, "title", "(sin título)")
-                link = getattr(entry, "link", "")
+                link = (getattr(entry, "link", "") or "").strip()
+                if not re.match(r"https?://", link, re.I):
+                    continue  # esquema no permitido (javascript:, data:, etc.)
                 contenido = getattr(entry, "summary", "") or getattr(entry, "description", "")
                 autor = getattr(entry, "author", None)
 
