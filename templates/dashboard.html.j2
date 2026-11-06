@@ -25,17 +25,6 @@
 
       <div class="panel-controles">
         <div class="grupo-control grupo-filtros">
-          <form class="buscador" role="search" method="get" action="/">
-            <label class="grupo-control-titulo" for="buscar">Buscar noticias</label>
-            <div class="buscador-fila">
-              <input type="hidden" name="dias" value="{{ dias }}">
-              {% if categorias_activas | length != categorias_disponibles | length %}{% for c in categorias_activas %}<input type="hidden" name="categorias" value="{{ c }}">{% endfor %}{% endif %}
-              <input class="buscador-input" id="buscar" type="search" name="q" value="{{ q }}" maxlength="100"
-                     placeholder="Palabras del título, resumen o fuente…" autocomplete="off" enterkeyhint="search">
-              <button class="btn btn-primario" type="submit">Buscar</button>
-              {% if q %}<a class="btn-ghost" href="/?dias={{ dias }}{{ categorias_qs.replace('&q=' ~ (q | urlencode), '') }}">Limpiar</a>{% endif %}
-            </div>
-          </form>
           <div class="filtros-grid">
             <div class="filtro">
               <span class="grupo-control-titulo" id="titulo-rango">Rango de fechas</span>
@@ -240,6 +229,22 @@
   </header>
 
   <main class="wrap" id="contenido" tabindex="-1">
+    <search class="buscador" aria-label="Buscar noticias">
+      <form class="buscador-form" method="get" action="/">
+        <input type="hidden" name="dias" value="{{ dias }}">
+        {% if categorias_activas | length != categorias_disponibles | length %}{% for c in categorias_activas %}<input type="hidden" name="categorias" value="{{ c }}">{% endfor %}{% endif %}
+        <label class="sr-only" for="buscar">Buscar noticias por palabras</label>
+        <div class="buscador-barra">
+          <svg class="ico buscador-lupa" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+          <input class="buscador-input" id="buscar" type="search" name="q" value="{{ q }}" maxlength="100"
+                 placeholder="Buscar noticias por palabras: título, resumen, fuente…" autocomplete="off" enterkeyhint="search">
+          {% if q %}<a class="buscador-limpiar" href="/?dias={{ dias }}{{ categorias_qs.replace('&q=' ~ (q | urlencode), '') }}" aria-label="Limpiar búsqueda" title="Limpiar búsqueda"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg></a>{% endif %}
+          <button class="btn btn-primario buscador-btn" type="submit">Buscar</button>
+        </div>
+      </form>
+      {% if q %}<p class="buscador-estado" role="status"><strong>{{ total_items }}</strong> {{ 'resultado' if total_items == 1 else 'resultados' }} para «{{ q }}»</p>{% endif %}
+    </search>
+
     {% if destacados %}
     <section class="destacados">
       <h2 class="cat-h" id="h-destacados">

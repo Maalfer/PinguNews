@@ -1076,12 +1076,32 @@ animation: none !important;
 }
 }
 
-/* Buscador de noticias */
-.buscador { margin: 0 0 16px; }
-.buscador .grupo-control-titulo { display: block; }
-.buscador-fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* Buscador de noticias: barra a todo el ancho entre la cabecera y las noticias */
+.buscador { margin: 0 auto 28px; max-width: 760px; }
+.buscador-barra {
+display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 18px;
+background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px;
+box-shadow: 0 4px 18px rgba(15, 23, 42, 0.07); transition: border-color .15s, box-shadow .15s;
+}
+.buscador-barra:focus-within { border-color: var(--accent); box-shadow: 0 6px 22px rgba(15, 23, 42, 0.13); }
+.buscador-lupa { flex: none; width: 20px; height: 20px; color: var(--text-muted); }
 .buscador-input {
-flex: 1 1 220px; min-width: 0; font: inherit; font-size: 0.95rem; padding: 10px 16px;
-border: 1px solid var(--border); border-radius: 999px; background: var(--bg-card); color: var(--text);
+flex: 1 1 auto; min-width: 0; font: inherit; font-size: 1rem; padding: 10px 6px;
+border: 0; background: transparent; color: var(--text); outline: none;
 }
 .buscador-input::placeholder { color: var(--text-muted); }
+.buscador-input::-webkit-search-cancel-button { display: none; }
+.buscador-limpiar {
+flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+border-radius: 50%; color: var(--text-muted); text-decoration: none;
+}
+.buscador-limpiar:hover { background: var(--bg); color: var(--text); }
+.buscador-limpiar .ico { width: 16px; height: 16px; }
+.buscador-btn { flex: none; border-radius: 999px; padding: 10px 24px; }
+.buscador-estado { margin: 10px 0 0; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+@media (max-width: 480px) {
+.buscador-barra { padding-left: 14px; }
+.buscador-btn { padding: 10px 16px; }
+.buscador-input::placeholder { font-size: 0.85rem; }
+}
+.buscador .ico { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
