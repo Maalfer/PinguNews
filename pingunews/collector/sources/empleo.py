@@ -23,9 +23,10 @@ from typing import List
 
 import requests
 
-from classifier import resumir
-from rss import recopilar as recopilar_rss
-from utils import Item, coincide_palabra_completa, normalize
+from pingunews.collector.classifier import resumir
+from pingunews.collector.sources.rss import recopilar as recopilar_rss
+from pingunews.models import Item
+from pingunews.text import coincide_palabra_completa, normalize
 
 logger = logging.getLogger("herramienta.empleo")
 

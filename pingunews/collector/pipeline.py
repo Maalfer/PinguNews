@@ -1,19 +1,16 @@
-"""Lógica de recolección compartida entre la CLI (main.py) y la app web (app.py)."""
+"""Pipeline de recolección, compartido por la CLI (`pingunews.cli`) y el botón
+"Actualizar ahora" del panel web."""
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import List
 
-import empleo
-import rss
-import twitter
-from db import Database
-from dedup import agrupar_por_titulo, separar_duplicados_de_historico
-from utils import Item
+from pingunews.collector.dedup import agrupar_por_titulo, separar_duplicados_de_historico
+from pingunews.collector.sources import empleo, rss, twitter
+from pingunews.models import Item
+from pingunews.storage import Database
 
-BASE_DIR = Path(__file__).parent
 logger = logging.getLogger("herramienta.collector")
 
 

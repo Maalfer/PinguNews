@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Iterable, Iterator, List, Optional, Set, Tuple
 
-from utils import Item, SEPARADOR_FUENTES
+from pingunews.models import SEPARADOR_FUENTES, Item
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS items (
@@ -157,7 +157,7 @@ class Database:
 
     def items_recientes(self, dias: int, categorias: Optional[List[str]] = None) -> List[dict]:
         """Ítems guardados en los últimos `dias` días, los de más cobertura y
-        más recientes primero (ver dedup.py: varias fuentes cubriendo la
+        más recientes primero (ver collector/dedup.py: varias fuentes cubriendo la
         misma noticia es la señal de qué es más relevante)."""
         desde = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
         query = "SELECT * FROM items WHERE fecha >= ?"
@@ -174,7 +174,7 @@ class Database:
 
     def existentes_para_dedup(self, dias: int) -> List[Tuple[str, str, List[str]]]:
         """(hash, título, fuentes que ya la cubrían) de los últimos `dias` días,
-        para el deduplicado por similitud contra el histórico (ver dedup.py)."""
+        para el deduplicado por similitud contra el histórico (ver collector/dedup.py)."""
         desde = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
         with self._connect() as conn:
             cur = conn.execute(

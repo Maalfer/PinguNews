@@ -23,14 +23,14 @@ general:
     dias: 30
     umbral: 0.55
 
-# Panel web (ver app.py)
+# Panel web (ver pingunews/web)
 dashboard:
   # Rango de días mostrado por defecto al abrir el panel
   dias_por_defecto: 15
   # Opciones de rango que se muestran como botones en el panel
   opciones_dias: [1, 3, 7, 15, 30]
   # Sección "🔥 Lo más comentado": ítems cubiertos por varias fuentes
-  # distintas (ver dedup.py), pensada para encontrar material jugoso para
+  # distintas (ver pingunews/collector/dedup.py), pensada para encontrar material jugoso para
   # comentar en directo. "minima" = a partir de cuántas fuentes se considera
   # destacado; "max" = cuántos se muestran como mucho.
   destacados_cobertura_minima: 2

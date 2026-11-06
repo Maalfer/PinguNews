@@ -30,7 +30,7 @@ TIMEOUT = 4                 # s por petición
 MAX_LONGITUD = 180          # descartamos frases muy largas (no caben bien)
 ENFRIAMIENTO_TRAS_FALLO = 300  # s sin insistir si la API falla
 
-from frases_locales import FRASES as _LOCAL  # repertorio propio (ver frases_locales.py)
+from pingunews.content.frases_locales import FRASES as _LOCAL  # repertorio propio
 
 _POOL: Deque[Dict[str, str]] = deque()
 _lock = threading.Lock()

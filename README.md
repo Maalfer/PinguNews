@@ -71,8 +71,10 @@ Todo se configura en [`config/config.yaml`](config/config.yaml):
 ## Ejecución
 
 ```bash
-./venv/bin/uvicorn app:app --reload --port 8000
+./venv/bin/uvicorn pingunews.web.app:app --reload --port 8000
 ```
+
+Para recolectar noticias desde la terminal: `./venv/bin/python -m pingunews.cli`.
 
 Abre **http://127.0.0.1:8000** en el navegador. Desde ahí puedes:
 - Elegir cuántos días hacia atrás ver (botones 1/3/7/15/30 días; por defecto 15).
@@ -84,26 +86,35 @@ Abre **http://127.0.0.1:8000** en el navegador. Desde ahí puedes:
 ## Estructura del proyecto
 
 ```
-app.py         # panel web FastAPI: lee de SQLite, filtros, auth, likes/guardados
-auth.py        # hash de contraseñas (PBKDF2-HMAC-SHA256, sin dependencias externas)
-main.py        # CLI de recolección, para ejecutar a mano o por cron
-collector.py   # lógica de recolección compartida entre app.py y main.py
-dedup.py       # deduplicado por similitud de título + conteo de cobertura
-rss.py         # fuente: feeds RSS/Atom
-twitter.py     # fuente: Twitter/X (snscrape, desactivado por defecto)
-empleo.py      # fuente: ofertas de empleo (RemoteOK + Jobicy + RSS configurables)
-classifier.py  # clasificación por palabras clave + resumen heurístico
-db.py          # histórico, deduplicado, usuarios, likes, guardados en SQLite
-utils.py       # utilidades comunes (normalización, logging, modelo Item)
-config/config.yaml  # configuración central editable
-templates/dashboard.html.j2   # panel principal
-templates/login.html.j2       # inicio de sesión
-templates/registro.html.j2    # creación de cuenta
-templates/guardados.html.j2   # ítems guardados por el usuario
-templates/_estilos.html.j2    # CSS compartido por todas las páginas
-templates/_macros.html.j2     # tarjeta de ítem y área de usuario, reutilizadas
-templates/_favicon.html.j2    # <link> del favicon/apple-touch-icon, compartido
-static/logo.png               # logo de la app (header, login, registro)
-static/favicon.png            # favicon (64x64, generado a partir del logo)
-static/apple-touch-icon.png   # icono para "añadir a inicio" en iOS (180x180)
+config/config.yaml        # configuración central editable
+pingunews/
+  config.py               # rutas, entorno y carga de config.yaml
+  models.py               # modelo Item
+  text.py                 # normalización y limpieza de texto
+  logging_setup.py        # logging
+  cli.py                  # recolección por terminal / systemd (python -m pingunews.cli)
+  collector/
+    pipeline.py           # orquesta fuentes → deduplicado → guardado
+    classifier.py         # clasificación por palabras clave + resumen heurístico
+    dedup.py              # deduplicado por similitud de título + cobertura
+    sources/              # rss.py, empleo.py, twitter.py
+  storage/database.py     # SQLite: histórico, usuarios, likes, guardados
+  content/                # frases de la portada y datos legales del titular
+  web/
+    app.py                # fábrica de la app FastAPI (create_app)
+    routes/               # panel, cuentas, guardados, paginas
+    busqueda.py           # buscador de noticias
+    seguridad.py          # cabeceras (CSP), clave de sesión
+    csrf.py, ratelimit.py, passwords.py
+    plantillas.py, estaticos.py, noticias.py, ajustes.py, deps.py
+    templates/            # plantillas Jinja2
+    static/               # CSS, JS e imágenes
+tests/                    # pytest
+```
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
 ```

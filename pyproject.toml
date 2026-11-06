@@ -1,0 +1,17 @@
+[project]
+name = "pingunews"
+version = "1.1.0"
+description = "Monitorización de noticias de ciberseguridad, hacking, empleo e IT en español."
+requires-python = ">=3.11"
+
+[project.scripts]
+pingunews-recolectar = "pingunews.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["pingunews*"]
+
+[tool.setuptools.package-data]
+pingunews = ["web/templates/**/*", "web/static/**/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

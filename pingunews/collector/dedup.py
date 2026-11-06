@@ -1,6 +1,6 @@
 """Deduplicado por similitud de título — y conteo de cobertura.
 
-El deduplicado por hash (ver db.py) solo detecta ítems con la misma URL+título
+El deduplicado por hash (ver pingunews/storage/database.py) solo detecta ítems con la misma URL+título
 exactos. Pero si Hispasec y MuySeguridad cubren el mismo CVE, cada uno con su
 propio titular, tienen hashes distintos y aparecerían como dos noticias
 diferentes. Esto compara por solapamiento de palabras significativas del
@@ -14,7 +14,8 @@ from __future__ import annotations
 import re
 from typing import Iterable, List, Sequence, Tuple
 
-from utils import Item, normalize
+from pingunews.models import Item
+from pingunews.text import normalize
 
 # Palabras demasiado comunes en titulares en español como para aportar señal
 # de que dos noticias tratan lo mismo.

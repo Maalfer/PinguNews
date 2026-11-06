@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from utils import coincide_palabra_completa, normalize, strip_html
+from pingunews.text import coincide_palabra_completa, normalize, strip_html
 
 CATEGORIA_ORDEN = [
     "ciberseguridad",

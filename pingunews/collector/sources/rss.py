@@ -9,8 +9,8 @@ from typing import List
 
 import feedparser
 
-from classifier import clasificar, resumir
-from utils import Item
+from pingunews.collector.classifier import clasificar, resumir
+from pingunews.models import Item
 
 logger = logging.getLogger("herramienta.rss")
 

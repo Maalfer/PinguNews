@@ -19,8 +19,8 @@ import logging
 from datetime import datetime, timezone
 from typing import List
 
-from classifier import clasificar, resumir
-from utils import Item
+from pingunews.collector.classifier import clasificar, resumir
+from pingunews.models import Item
 
 logger = logging.getLogger("herramienta.twitter")
 
