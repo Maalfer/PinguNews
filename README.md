@@ -70,10 +70,6 @@ Todo se configura en [`config/config.yaml`](config/config.yaml):
 
 ## Ejecución
 
-Hay dos partes independientes: **recolectar** (guarda en SQLite) y **visualizar** (panel web que lee de ahí).
-
-### 1. Arrancar el panel web
-
 ```bash
 ./venv/bin/uvicorn app:app --reload --port 8000
 ```
@@ -84,26 +80,6 @@ Abre **http://127.0.0.1:8000** en el navegador. Desde ahí puedes:
 - Filtrar por categoría (Ciberseguridad, 📺 Tendencias del sector, Empleo, Desarrollo/IT, Actualidad) con las casillas.
 - Pulsar **"↻ Actualizar ahora"** para lanzar una recolección nueva sin usar la terminal (tarda unos segundos; la página se recarga sola con lo nuevo).
 - Crear una cuenta / iniciar sesión (arriba a la derecha) para **dar "me gusta"** a las noticias y **guardarlas para ver más tarde** (sección "🔖 Mis guardados"). Sin iniciar sesión puedes ver todo igualmente, solo que esos botones te mandan a iniciar sesión.
-
-### 2. Recolectar desde la terminal (opcional, útil para cron)
-
-```bash
-./venv/bin/python main.py
-```
-
-Hace lo mismo que el botón "Actualizar ahora" pero sin necesidad de tener el panel abierto. Útil si quieres programarlo para que la base de datos esté siempre al día aunque no abras el navegador.
-
-Ambas vías escriben en:
-- `data/herramienta.db` — histórico SQLite para no repetir contenido ya visto.
-- `logs/app.log` — log de cada recolección; si una fuente falla, se registra el error y el resto continúa.
-
-### Programar recolección diaria (cron)
-
-```cron
-0 8 * * * cd /ruta/al/proyecto && ./venv/bin/python main.py >> logs/cron.log 2>&1
-```
-
-En Windows, usar el Programador de tareas apuntando a `venv\Scripts\python.exe main.py` con directorio de trabajo el del proyecto. El panel web (`uvicorn`) se deja corriendo aparte (por ejemplo como servicio) para poder consultarlo cuando quieras.
 
 ## Estructura del proyecto
 
