@@ -114,3 +114,35 @@ def test_admin_asciende_a_otro_usuario(cliente):
     })
     assert "actualizado a admin" in r.text
     assert cliente.app.state.db.obtener_usuario_por_id(objetivo["id"])["rol"] == "admin"
+
+
+def test_admin_panel_requiere_login(cliente):
+    assert cliente.get("/admin", follow_redirects=False).status_code == 303
+
+
+def test_admin_panel_prohibido_para_no_admin(cliente):
+    _registrar(cliente, "normal3", password="contrasena123")
+    assert cliente.get("/admin").status_code == 403
+
+
+def test_admin_panel_enlaza_a_gestion_usuarios(cliente):
+    _registrar(cliente, "admin5", password="contrasena123")
+    _hacer_admin(cliente, "admin5")
+    html = cliente.get("/login").text
+    cliente.post("/login", data={"csrf_token": _csrf(html), "nombre_usuario": "admin5", "password": "contrasena123"})
+
+    r = cliente.get("/admin")
+    assert r.status_code == 200
+    assert "Gestión Usuarios" in r.text
+    assert 'href="/usuarios-registrados"' in r.text
+
+
+def test_header_admin_enlaza_al_panel_de_admin(cliente):
+    _registrar(cliente, "admin6", password="contrasena123")
+    _hacer_admin(cliente, "admin6")
+    html = cliente.get("/login").text
+    cliente.post("/login", data={"csrf_token": _csrf(html), "nombre_usuario": "admin6", "password": "contrasena123"})
+
+    r = cliente.get("/")
+    assert 'href="/admin"' in r.text
+    assert re.search(r'href="/admin"[^<]*<svg.*?</svg>\s*Admin\s*</a>', r.text, re.S)

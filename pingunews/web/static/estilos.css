@@ -790,6 +790,12 @@ stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
 @media (max-width: 720px) {
 .perfil-grid { grid-template-columns: 1fr; }
 }
+/* Tarjeta-enlace de /admin: mismo aspecto que .perfil-card, pero clicable
+   entera (pensada para ir sumando más opciones de administrador aquí). */
+.admin-tile { display: block; text-decoration: none; color: inherit; transition: border-color 0.15s ease, transform 0.15s ease; }
+.admin-tile:hover { border-color: var(--text-muted); transform: translateY(-2px); }
+.admin-tile:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .admin-tile { transition: none; } .admin-tile:hover { transform: none; } }
 .usuarios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
 .usuario-card { max-width: none; }
 .usuario-card-cabecera { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }

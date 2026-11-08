@@ -43,6 +43,18 @@ def _render_usuarios(request: Request, admin: dict, error=None, mensaje=None, st
     }, status_code=status_code)
 
 
+@router.get("/admin", response_class=HTMLResponse)
+def admin_panel(request: Request):
+    """Punto de entrada único para todo lo de administrador (enlazado desde
+    el header, ver _macros.auth_area). Por ahora solo enlaza a
+    /usuarios-registrados, pero deja un sitio fijo donde añadir más
+    opciones de admin en el futuro sin tocar el header otra vez."""
+    admin = _admin_actual(request)
+    if not admin:
+        return RedirectResponse("/login", status_code=303)
+    return render(request, "admin.html.j2", {"usuario": admin, "csrf_token": csrf.token_csrf(request)})
+
+
 @router.get("/usuarios-registrados", response_class=HTMLResponse)
 def usuarios_registrados(request: Request):
     admin = _admin_actual(request)

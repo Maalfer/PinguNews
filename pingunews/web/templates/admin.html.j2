@@ -1,0 +1,20 @@
+{#
+  Punto de entrada de administración: por ahora una única opción (gestión de
+  usuarios), pero pensado para ir añadiendo más tarjetas aquí según crezca
+  lo que necesite un admin, sin volver a tocar el enlace del header.
+#}
+{% extends "_base.html.j2" %}
+{% block titulo %}Administración — PinguNews{% endblock %}
+{% block titulo_pagina %}🛠️ Administración{% endblock %}
+{% block subtitulo_pagina %}<span class="subtitulo">opciones solo para administradores</span>{% endblock %}
+
+{% block main %}
+  <main class="wrap" id="contenido" tabindex="-1">
+    <div class="perfil-grid">
+      <a class="perfil-card admin-tile" href="/usuarios-registrados">
+        <h2><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> Gestión Usuarios</h2>
+        <p class="campo-sub">Ver todas las cuentas, cambiar contraseñas, roles y enviar restablecimientos.</p>
+      </a>
+    </div>
+  </main>
+{% endblock %}
