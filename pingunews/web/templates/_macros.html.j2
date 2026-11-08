@@ -40,10 +40,10 @@
 {% macro auth_area(usuario, csrf_token) %}
 <div class="auth-area">
   {% if usuario %}
-    <span class="usuario">
+    <a class="usuario" href="/perfil">
       <span class="avatar" aria-hidden="true">{{ usuario.nombre_usuario[:1] | upper }}</span>
       <span class="usuario-nombre"><span class="sr-only">Sesión iniciada como </span>{{ usuario.nombre_usuario }}</span>
-    </span>
+    </a>
     <a class="btn-ghost" href="/guardados">
       <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg>
       Mis guardados

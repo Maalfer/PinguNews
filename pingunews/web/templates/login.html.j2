@@ -30,6 +30,7 @@
         <p class="auth-sub">Entra para guardar noticias y darles me gusta.</p>
 
         {% if error %}<p class="auth-error" id="auth-error" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span>{{ error }}</span></p>{% endif %}
+        {% if mensaje %}<p class="auth-exito" role="status"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>{{ mensaje }}</span></p>{% endif %}
 
         <form method="post" action="/login">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -47,6 +48,7 @@
           <input type="password" id="password" name="password" data-pw autocomplete="current-password" required{% if error %} aria-describedby="auth-error"{% endif %}>
           <button type="button" class="btn-ojo" data-for="password" data-nombre="contraseña" hidden aria-pressed="false" aria-label="Mostrar contraseña"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
         </div>
+        <p class="campo-ayuda campo-ayuda-enlace"><a href="/olvide-password">¿Olvidaste tu contraseña?</a></p>
       </div>
           <button type="submit" class="btn btn-primario btn-grande">Entrar</button>
         </form>

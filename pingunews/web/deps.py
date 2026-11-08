@@ -23,7 +23,28 @@ def usuario_actual(request: Request) -> Optional[dict]:
     usuario_id = request.session.get("usuario_id")
     if not usuario_id:
         return None
-    return get_db(request).obtener_usuario_por_id(usuario_id)
+    usuario = get_db(request).obtener_usuario_por_id(usuario_id)
+    if not usuario:
+        return None
+    version_sesion = request.session.get("version_sesion")
+    # Si la sesión no lleva version_sesion es que se abrió antes de que este
+    # campo existiera: se acepta tal cual para no cerrar de golpe sesiones ya
+    # abiertas al desplegar esto. Solo se exige que coincida cuando la sesión
+    # SÍ la lleva y no coincide con la actual (se cambió la contraseña en
+    # otro sitio, ver Database.actualizar_password).
+    if version_sesion is not None and version_sesion != usuario["version_sesion"]:
+        request.session.clear()
+        return None
+    return usuario
+
+
+def iniciar_sesion(request: Request, usuario: dict) -> None:
+    """Crea la sesión de este usuario (login o verificación de registro).
+    session.clear() evita session fixation: cualquier dato de la sesión
+    anónima anterior (csrf_token incluido) se descarta y se genera de cero."""
+    request.session.clear()
+    request.session["usuario_id"] = usuario["id"]
+    request.session["version_sesion"] = usuario["version_sesion"]
 
 
 def render(request: Request, plantilla: str, contexto: dict, status_code: int = 200) -> HTMLResponse:

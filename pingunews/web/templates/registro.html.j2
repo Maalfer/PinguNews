@@ -42,6 +42,14 @@
         <p class="campo-ayuda" id="nombre_usuario-ayuda">Mínimo 3 caracteres.</p>
       </div>
       <div class="campo">
+        <label for="email">Correo electrónico</label>
+        <div class="campo-caja">
+          <svg class="campo-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M4 7l8 6 8-6"/></svg>
+          <input type="email" id="email" name="email" aria-describedby="email-ayuda{% if error %} auth-error{% endif %}" autocomplete="email" maxlength="254" required>
+        </div>
+        <p class="campo-ayuda" id="email-ayuda">Lo usamos para verificar tu cuenta y poder recuperar la contraseña.</p>
+      </div>
+      <div class="campo">
         <label for="password">Contraseña</label>
         <div class="campo-caja">
           <svg class="campo-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>

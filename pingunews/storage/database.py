@@ -35,6 +35,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
     nombre_usuario TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     salt TEXT NOT NULL,
+    email TEXT,
+    -- Se incrementa al cambiar la contraseña: las sesiones (cookie firmada,
+    -- ver web/deps.usuario_actual) guardan el valor que tenían al iniciar
+    -- sesión, así que subir este número cierra cualquier otra sesión abierta
+    -- con la contraseña anterior sin necesidad de un almacén de sesiones.
+    version_sesion INTEGER NOT NULL DEFAULT 1,
     creado_en TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS guardados (
@@ -51,14 +57,60 @@ CREATE TABLE IF NOT EXISTS likes (
 );
 CREATE INDEX IF NOT EXISTS idx_guardados_usuario ON guardados (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_likes_item ON likes (item_hash);
+
+-- Registro pendiente de verificación: la cuenta en `usuarios` no se crea
+-- hasta que se confirma el correo (ver routes/cuentas.py), así que no hace
+-- falta un campo "verificado" aparte ni se puede ocupar un nombre de usuario
+-- solo con un correo ajeno que nunca se confirma.
+CREATE TABLE IF NOT EXISTS registros_pendientes (
+    token TEXT PRIMARY KEY,
+    nombre_usuario TEXT NOT NULL,
+    email TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    creado_en TEXT NOT NULL,
+    expira_en TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_registros_pendientes_nombre ON registros_pendientes (nombre_usuario);
+CREATE INDEX IF NOT EXISTS idx_registros_pendientes_email ON registros_pendientes (email);
+
+-- Recuperación de contraseña: como mucho un enlace válido a la vez por
+-- usuario (ver crear_token_reset) y se borra al usarse, así que no hace
+-- falta un campo "usado".
+CREATE TABLE IF NOT EXISTS tokens_reset_password (
+    token TEXT PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+    creado_en TEXT NOT NULL,
+    expira_en TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tokens_reset_usuario ON tokens_reset_password (usuario_id);
+
+-- Cambio de correo pendiente de confirmación: el correo nuevo se guarda aquí,
+-- no en usuarios.email, hasta que se confirma con el enlace enviado a esa
+-- misma dirección (prueba de que el usuario la controla).
+CREATE TABLE IF NOT EXISTS cambios_email_pendientes (
+    token TEXT PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+    email_nuevo TEXT NOT NULL,
+    creado_en TEXT NOT NULL,
+    expira_en TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_cambios_email_usuario ON cambios_email_pendientes (usuario_id);
 """
 
-# Columnas añadidas después de la primera versión del esquema: se agregan a
-# bases de datos ya existentes con ALTER TABLE (SQLite no soporta "ADD COLUMN
-# IF NOT EXISTS", así que se comprueba a mano con PRAGMA table_info).
+# Columnas añadidas después de la primera versión del esquema, por tabla: se
+# agregan a bases de datos ya existentes con ALTER TABLE (SQLite no soporta
+# "ADD COLUMN IF NOT EXISTS", así que se comprueba a mano con PRAGMA
+# table_info).
 COLUMNAS_MIGRABLES = {
-    "cobertura": "INTEGER NOT NULL DEFAULT 1",
-    "fuentes_cobertura": "TEXT",
+    "items": {
+        "cobertura": "INTEGER NOT NULL DEFAULT 1",
+        "fuentes_cobertura": "TEXT",
+    },
+    "usuarios": {
+        "email": "TEXT",
+        "version_sesion": "INTEGER NOT NULL DEFAULT 1",
+    },
 }
 
 
@@ -69,12 +121,19 @@ class Database:
         with self._connect() as conn:
             conn.executescript(SCHEMA)
             self._migrar_columnas(conn)
+            # El índice único de email se crea aparte (no en SCHEMA): en una
+            # base de datos ya existente la columna no existe todavía cuando
+            # se ejecuta SCHEMA, solo después de _migrar_columnas.
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios(email) WHERE email IS NOT NULL"
+            )
 
     def _migrar_columnas(self, conn: sqlite3.Connection) -> None:
-        columnas_actuales = {fila[1] for fila in conn.execute("PRAGMA table_info(items)")}
-        for columna, tipo in COLUMNAS_MIGRABLES.items():
-            if columna not in columnas_actuales:
-                conn.execute(f"ALTER TABLE items ADD COLUMN {columna} {tipo}")
+        for tabla, columnas in COLUMNAS_MIGRABLES.items():
+            columnas_actuales = {fila[1] for fila in conn.execute(f"PRAGMA table_info({tabla})")}
+            for columna, tipo in columnas.items():
+                if columna not in columnas_actuales:
+                    conn.execute(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo}")
 
     @contextmanager
     def _connect(self) -> Iterator[sqlite3.Connection]:
@@ -187,11 +246,11 @@ class Database:
 
     # ---- Usuarios ----
 
-    def crear_usuario(self, nombre_usuario: str, password_hash: str, salt: str) -> int:
+    def crear_usuario(self, nombre_usuario: str, password_hash: str, salt: str, email: Optional[str] = None) -> int:
         with self._connect() as conn:
             cur = conn.execute(
-                "INSERT INTO usuarios (nombre_usuario, password_hash, salt, creado_en) VALUES (?, ?, ?, ?)",
-                (nombre_usuario, password_hash, salt, datetime.now(timezone.utc).isoformat()),
+                "INSERT INTO usuarios (nombre_usuario, password_hash, salt, email, creado_en) VALUES (?, ?, ?, ?, ?)",
+                (nombre_usuario, password_hash, salt, email.lower() if email else None, datetime.now(timezone.utc).isoformat()),
             )
             return cur.lastrowid
 
@@ -208,6 +267,133 @@ class Database:
             cur = conn.execute("SELECT * FROM usuarios WHERE id = ?", (usuario_id,))
             fila = cur.fetchone()
             return dict(fila) if fila else None
+
+    def obtener_usuario_por_email(self, email: str) -> Optional[dict]:
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("SELECT * FROM usuarios WHERE email = ?", (email.lower(),))
+            fila = cur.fetchone()
+            return dict(fila) if fila else None
+
+    def actualizar_nombre_usuario(self, usuario_id: int, nombre_usuario: str) -> None:
+        with self._connect() as conn:
+            conn.execute("UPDATE usuarios SET nombre_usuario = ? WHERE id = ?", (nombre_usuario, usuario_id))
+
+    def actualizar_email(self, usuario_id: int, email: str) -> None:
+        with self._connect() as conn:
+            conn.execute("UPDATE usuarios SET email = ? WHERE id = ?", (email.lower(), usuario_id))
+
+    def actualizar_password(self, usuario_id: int, password_hash: str, salt: str) -> int:
+        """Cambia la contraseña y sube version_sesion (ver comentario en SCHEMA):
+        invalida cualquier otra sesión abierta con la contraseña anterior.
+        Devuelve la nueva version_sesion para que la sesión actual se
+        actualice y no se cierre a sí misma (ver routes/cuentas.py y
+        routes/perfil.py)."""
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE usuarios SET password_hash = ?, salt = ?, version_sesion = version_sesion + 1 WHERE id = ?",
+                (password_hash, salt, usuario_id),
+            )
+            return conn.execute(
+                "SELECT version_sesion FROM usuarios WHERE id = ?", (usuario_id,)
+            ).fetchone()[0]
+
+    # ---- Registro pendiente de verificación por email ----
+
+    def crear_registro_pendiente(
+        self, token: str, nombre_usuario: str, email: str, password_hash: str, salt: str, expira_en: str
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO registros_pendientes "
+                "(token, nombre_usuario, email, password_hash, salt, creado_en, expira_en) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (token, nombre_usuario, email.lower(), password_hash, salt,
+                 datetime.now(timezone.utc).isoformat(), expira_en),
+            )
+
+    def obtener_registro_pendiente(self, token: str) -> Optional[dict]:
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("SELECT * FROM registros_pendientes WHERE token = ?", (token,))
+            fila = cur.fetchone()
+            return dict(fila) if fila else None
+
+    def obtener_registro_pendiente_por_nombre(self, nombre_usuario: str) -> Optional[dict]:
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("SELECT * FROM registros_pendientes WHERE nombre_usuario = ?", (nombre_usuario,))
+            fila = cur.fetchone()
+            return dict(fila) if fila else None
+
+    def registro_pendiente_en_conflicto(self, nombre_usuario: str, email: str) -> Optional[dict]:
+        """Registro pendiente que ya usa ese nombre de usuario o ese correo
+        (para avisar o reenviar el correo al registrarse otra vez, ver
+        routes/cuentas.py)."""
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute(
+                "SELECT * FROM registros_pendientes WHERE nombre_usuario = ? OR email = ?",
+                (nombre_usuario, email.lower()),
+            )
+            fila = cur.fetchone()
+            return dict(fila) if fila else None
+
+    def eliminar_registro_pendiente(self, token: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM registros_pendientes WHERE token = ?", (token,))
+
+    def limpiar_registros_pendientes_expirados(self) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "DELETE FROM registros_pendientes WHERE expira_en < ?",
+                (datetime.now(timezone.utc).isoformat(),),
+            )
+
+    # ---- Recuperación de contraseña ----
+
+    def crear_token_reset(self, token: str, usuario_id: int, expira_en: str) -> None:
+        with self._connect() as conn:
+            # Como mucho un enlace válido a la vez por usuario: evita
+            # confusión sobre cuál es "el" enlace si se pide varias veces.
+            conn.execute("DELETE FROM tokens_reset_password WHERE usuario_id = ?", (usuario_id,))
+            conn.execute(
+                "INSERT INTO tokens_reset_password (token, usuario_id, creado_en, expira_en) VALUES (?, ?, ?, ?)",
+                (token, usuario_id, datetime.now(timezone.utc).isoformat(), expira_en),
+            )
+
+    def obtener_token_reset(self, token: str) -> Optional[dict]:
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("SELECT * FROM tokens_reset_password WHERE token = ?", (token,))
+            fila = cur.fetchone()
+            return dict(fila) if fila else None
+
+    def eliminar_token_reset(self, token: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM tokens_reset_password WHERE token = ?", (token,))
+
+    # ---- Cambio de correo pendiente de confirmación ----
+
+    def crear_cambio_email(self, token: str, usuario_id: int, email_nuevo: str, expira_en: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM cambios_email_pendientes WHERE usuario_id = ?", (usuario_id,))
+            conn.execute(
+                "INSERT INTO cambios_email_pendientes (token, usuario_id, email_nuevo, creado_en, expira_en) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (token, usuario_id, email_nuevo.lower(), datetime.now(timezone.utc).isoformat(), expira_en),
+            )
+
+    def obtener_cambio_email(self, token: str) -> Optional[dict]:
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("SELECT * FROM cambios_email_pendientes WHERE token = ?", (token,))
+            fila = cur.fetchone()
+            return dict(fila) if fila else None
+
+    def eliminar_cambio_email(self, token: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM cambios_email_pendientes WHERE token = ?", (token,))
 
     # ---- Guardados ("ver más tarde") ----
 

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi perfil — PinguNews</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  {% import "_macros.html.j2" as m %}
+  {{ m.sprite_iconos() }}
+
+  <header class="top">
+    <div class="inner">
+      <div class="brand-fila">
+        <div class="brand">
+          <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="64" height="64" fetchpriority="high" decoding="async"></picture>
+          <h1>👤 Mi perfil</h1>
+          <span class="subtitulo">gestiona tu usuario, correo y contraseña</span>
+        </div>
+        {{ m.auth_area(usuario, csrf_token) }}
+      </div>
+      <div class="volver-wrap"><a class="btn-ghost btn-volver" href="/">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Volver al panel
+      </a></div>
+    </div>
+  </header>
+
+  <main class="wrap" id="contenido" tabindex="-1">
+
+    <section class="perfil-card" aria-labelledby="perfil-usuario-h">
+      <h2 id="perfil-usuario-h">Nombre de usuario</h2>
+      <p class="campo-sub">Usuario actual: <strong>{{ usuario.nombre_usuario }}</strong></p>
+      {% if seccion == 'usuario' and error %}<p class="auth-error" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span>{{ error }}</span></p>{% endif %}
+      {% if seccion == 'usuario' and mensaje %}<p class="auth-exito" role="status"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>{{ mensaje }}</span></p>{% endif %}
+      <form method="post" action="/perfil/usuario">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="campo">
+          <label for="nombre_usuario_nuevo">Nuevo nombre de usuario</label>
+          <input type="text" id="nombre_usuario_nuevo" name="nombre_usuario_nuevo" value="{{ usuario.nombre_usuario }}" minlength="3" maxlength="32" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        </div>
+        <div class="campo">
+          <label for="password_actual_usuario">Confirma tu contraseña actual</label>
+          <input type="password" id="password_actual_usuario" name="password_actual" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primario">Guardar nombre de usuario</button>
+      </form>
+    </section>
+
+    <section class="perfil-card" aria-labelledby="perfil-email-h">
+      <h2 id="perfil-email-h">Correo electrónico</h2>
+      <p class="campo-sub">
+        {% if usuario.email %}Correo actual: <strong>{{ usuario.email }}</strong>
+        {% else %}No tienes un correo configurado todavía. Añade uno para poder recuperar tu contraseña si la olvidas.{% endif %}
+      </p>
+      {% if seccion == 'email' and error %}<p class="auth-error" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span>{{ error }}</span></p>{% endif %}
+      {% if seccion == 'email' and mensaje %}<p class="auth-exito" role="status"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>{{ mensaje }}</span></p>{% endif %}
+      <form method="post" action="/perfil/email">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="campo">
+          <label for="email_nuevo">{{ 'Correo nuevo' if usuario.email else 'Correo' }}</label>
+          <input type="email" id="email_nuevo" name="email_nuevo" maxlength="254" autocomplete="email" required>
+        </div>
+        <div class="campo">
+          <label for="password_actual_email">Confirma tu contraseña actual</label>
+          <input type="password" id="password_actual_email" name="password_actual" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn btn-primario">{{ 'Cambiar correo' if usuario.email else 'Añadir correo' }}</button>
+      </form>
+      <p class="campo-ayuda">Te enviaremos un enlace de confirmación a la dirección nueva; el cambio no se aplica hasta que lo confirmes.</p>
+    </section>
+
+    <section class="perfil-card" aria-labelledby="perfil-password-h">
+      <h2 id="perfil-password-h">Contraseña</h2>
+      {% if seccion == 'password' and error %}<p class="auth-error" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span>{{ error }}</span></p>{% endif %}
+      {% if seccion == 'password' and mensaje %}<p class="auth-exito" role="status"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>{{ mensaje }}</span></p>{% endif %}
+      <form method="post" action="/perfil/password">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="campo">
+          <label for="password_actual">Contraseña actual</label>
+          <input type="password" id="password_actual" name="password_actual" autocomplete="current-password" required>
+        </div>
+        <div class="campo">
+          <label for="password_nueva">Contraseña nueva</label>
+          <input type="password" id="password_nueva" name="password_nueva" autocomplete="new-password" minlength="8" required>
+        </div>
+        <div class="campo">
+          <label for="password_nueva2">Repite la contraseña nueva</label>
+          <input type="password" id="password_nueva2" name="password_nueva2" autocomplete="new-password" minlength="8" required>
+        </div>
+        <button type="submit" class="btn btn-primario">Cambiar contraseña</button>
+      </form>
+      <p class="campo-ayuda">Cambiar la contraseña cierra cualquier otra sesión que tengas abierta en otros dispositivos.</p>
+    </section>
+
+  </main>
+
+  {% include "_footer.html.j2" %}
+</body>
+</html>
