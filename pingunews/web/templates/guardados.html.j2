@@ -1,34 +1,9 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mis guardados — PinguNews</title>
-{% include "_favicon.html.j2" %}
-{% include "_estilos.html.j2" %}
-</head>
-<body>
-  <a class="skip-link" href="#contenido">Saltar al contenido</a>
-  {% import "_macros.html.j2" as m %}
-  {{ m.sprite_iconos() }}
+{% extends "_base.html.j2" %}
+{% block titulo %}Mis guardados — PinguNews{% endblock %}
+{% block titulo_pagina %}🔖 Mis guardados{% endblock %}
+{% block subtitulo_pagina %}<span class="subtitulo">ítems que has guardado para ver más tarde</span>{% endblock %}
 
-  <header class="top">
-    <div class="inner">
-      <div class="brand-fila">
-        <div class="brand">
-          <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="64" height="64" fetchpriority="high" decoding="async"></picture>
-          <h1>🔖 Mis guardados</h1>
-          <span class="subtitulo">ítems que has guardado para ver más tarde</span>
-        </div>
-        {{ m.auth_area(usuario, csrf_token) }}
-      </div>
-      <div class="volver-wrap"><a class="btn-ghost btn-volver" href="/">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-        Volver al panel
-      </a></div>
-    </div>
-  </header>
-
+{% block main %}
   <main class="wrap" id="contenido" tabindex="-1">
     {% if items %}
       <div class="cat-grid">
@@ -38,8 +13,6 @@
       <p class="vacio">Todavía no has guardado ningún ítem. Pulsa "📑 Guardar" en cualquier noticia del panel para que aparezca aquí.</p>
     {% endif %}
   </main>
+{% endblock %}
 
-  {% include "_footer.html.j2" %}
-  <script src="/static/panel.js?v={{ static_v('panel.js') }}" defer></script>
-</body>
-</html>
+{% block cuerpo_extra %}<script src="/static/panel.js?v={{ static_v('panel.js') }}" defer></script>{% endblock %}

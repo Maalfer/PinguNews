@@ -3,11 +3,12 @@
 <link rel="alternate" type="application/rss+xml" title="PinguNews" href="/feed.xml">
 <meta name="description" content="PinguNews: resumen diario de noticias de ciberseguridad, hacking, empleo y desarrollo IT en español.">
 <!-- Tarjeta de vista previa al compartir el enlace (WhatsApp, Telegram, X...).
-     Fija e igual en todas las páginas a propósito: esta parcial se incluye en
-     6 plantillas distintas sin paso de variables entre ellas, y una vista
-     previa constante es mejor que threadear un título por página solo para
-     esto. Se omite og:url porque aquí no sabemos qué página es cada vez; sin
-     él, la plataforma que la muestre usa la URL real que se compartió, que es
+     Fija e igual en todas las páginas a propósito: se incluye una sola vez
+     desde _base.html.j2 (y desde _auth_base.html.j2, que a su vez extiende
+     esa base), sin paso de variables entre ellas, y una vista previa
+     constante es mejor que threadear un título por página solo para esto.
+     Se omite og:url porque aquí no sabemos qué página es cada vez; sin él,
+     la plataforma que la muestre usa la URL real que se compartió, que es
      más correcto que poner siempre la home. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PinguNews">

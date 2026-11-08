@@ -1,27 +1,22 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ titulo }} — PinguNews</title>
-{% include "_favicon.html.j2" %}
-{% include "_estilos.html.j2" %}
-</head>
-<body>
-  <a class="skip-link" href="#contenido">Saltar al contenido</a>
-  <header class="top legal-top">
-    <div class="inner">
-      <a class="legal-marca" href="/" aria-label="PinguNews, ir al panel">
-        <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="64" height="64" fetchpriority="high" decoding="async"></picture>
-        <span>PinguNews</span>
-      </a>
-      <a class="btn-ghost" href="/">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
-        Volver al panel
-      </a>
-    </div>
-  </header>
+{% extends "_base.html.j2" %}
+{% block titulo %}{{ titulo }} — PinguNews{% endblock %}
 
+{% block header %}
+<header class="top legal-top">
+  <div class="inner">
+    <a class="legal-marca" href="/" aria-label="PinguNews, ir al panel">
+      <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="36" height="36" fetchpriority="high" decoding="async"></picture>
+      <span>PinguNews</span>
+    </a>
+    <a class="btn-ghost" href="/">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      Volver al panel
+    </a>
+  </div>
+</header>
+{% endblock %}
+
+{% block main %}
   <main class="wrap legal" id="contenido" tabindex="-1">
     <article class="prosa">
       <h1>{{ titulo }}</h1>
@@ -35,7 +30,4 @@
       {% if pagina != "cookies" %}<a class="btn-ghost" href="/cookies">Política de cookies</a>{% endif %}
     </nav>
   </main>
-
-  {% include "_footer.html.j2" %}
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}PinguNews{% endblock %}</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+{% block head_extra %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block skip_link %}<a class="skip-link" href="#contenido">Saltar al contenido</a>{% endblock %}
+{% import "_macros.html.j2" as m %}
+{{ m.sprite_iconos() }}
+
+{% block header %}
+<header class="top">
+  <div class="inner">
+    <div class="brand-fila">
+      <div class="brand">
+        <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="36" height="36" fetchpriority="high" decoding="async"></picture>
+        <h1>{% block titulo_pagina %}PinguNews{% endblock %}</h1>
+        {% block subtitulo_pagina %}{% endblock %}
+      </div>
+      {{ m.auth_area(usuario, csrf_token) }}
+    </div>
+    {% block header_extra %}
+    <div class="volver-wrap"><a class="btn-ghost btn-volver" href="/">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+      Volver al panel
+    </a></div>
+    {% endblock %}
+  </div>
+</header>
+{% endblock %}
+
+{% block main %}{% endblock %}
+
+{% include "_footer.html.j2" %}
+{% block cuerpo_extra %}{% endblock %}
+</body>
+</html>

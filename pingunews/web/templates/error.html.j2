@@ -1,14 +1,9 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ titulo }} — PinguNews</title>
-{% include "_favicon.html.j2" %}
-{% include "_estilos.html.j2" %}
-</head>
-<body class="auth-body">
-  {% import "_macros.html.j2" as m %}
+{% extends "_base.html.j2" %}
+{% block titulo %}{{ titulo }} — PinguNews{% endblock %}
+{% block body_class %}auth-body{% endblock %}
+{% block header %}{% endblock %}
+
+{% block main %}
   <main class="auth-main" id="contenido">
     <div class="auth-escena">
       <div class="auth-pingu" aria-hidden="true">{{ m.pingu(116) }}</div>
@@ -20,6 +15,4 @@
       </div>
     </div>
   </main>
-  {% include "_footer.html.j2" %}
-</body>
-</html>
+{% endblock %}

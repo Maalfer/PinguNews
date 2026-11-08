@@ -1,0 +1,41 @@
+{#
+  Base de las pantallas de acceso (login, registro, recuperar/restablecer
+  contraseña, verificación pendiente): el pingüino con bocadillo de frase y
+  el bloque "volver al panel" se repetían idénticos en las 5; aquí se
+  definen una sola vez y cada página solo aporta el contenido de su tarjeta
+  (bloque auth_card).
+#}
+{% extends "_base.html.j2" %}
+
+{% block body_class %}auth-body{% endblock %}
+{% block header %}{% endblock %}
+
+{% block main %}
+  <main class="auth-main" id="contenido">
+    <div class="auth-escena">
+      {% set f = frase_aleatoria() %}
+      <aside class="auth-lado">
+        <figure class="auth-pensar" aria-label="Frase motivadora">
+          <blockquote><p id="bq-texto">{{ f.texto }}</p></blockquote>
+          <figcaption id="bq-autor"{% if not f.autor %} hidden{% endif %}>{{ f.autor }}</figcaption>
+          <button type="button" class="bq-otra" id="bq-otra" hidden aria-label="Mostrar otra frase">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4"/></svg>
+          </button>
+          <span class="auth-pensar-cola" aria-hidden="true"><i></i><i></i></span>
+        </figure>
+        <div class="auth-pingu" aria-hidden="true">{{ m.pingu(116) }}</div>
+      </aside>
+
+      <div class="auth-card">
+        {% block auth_card %}{% endblock %}
+      </div>
+
+      <p class="auth-volver"><a class="btn-ghost" href="/">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Volver al panel
+      </a></p>
+    </div>
+  </main>
+{% endblock %}
+
+{% block cuerpo_extra %}{% include "_auth_script.html.j2" %}{% endblock %}
