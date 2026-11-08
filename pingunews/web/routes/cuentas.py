@@ -50,6 +50,17 @@ def _base_url(request: Request) -> str:
     return str(request.base_url).rstrip("/")
 
 
+def enviar_token_reset(db, usuario: dict, base_url: str) -> None:
+    """Genera y envía un enlace de recuperación de contraseña a `usuario`.
+    Reutilizado tanto por /olvide-password como por el panel de admin
+    (routes/admin.py) para forzar un reset desde ahí."""
+    token = secrets.token_urlsafe(32)
+    expira_en = (datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRA_RESET_HORAS)).isoformat()
+    db.crear_token_reset(token, usuario["id"], expira_en)
+    mail.enviar_reset_password(usuario["email"], usuario["nombre_usuario"], token, base_url)
+    logger.info("Reset de contraseña solicitado: usuario_id=%s", usuario["id"])
+
+
 def validar_email(email: str) -> str | None:
     """Reutilizado también en routes/perfil.py para validar el cambio de correo."""
     if not email or len(email) > EMAIL_MAX or not EMAIL_RE.fullmatch(email):
@@ -296,11 +307,7 @@ def olvide_password_submit(request: Request, csrf_token: str = Form(...), email:
     email = email.strip().lower()
     usuario = db.obtener_usuario_por_email(email) if EMAIL_RE.fullmatch(email or "") else None
     if usuario:
-        token = secrets.token_urlsafe(32)
-        expira_en = (datetime.now(timezone.utc) + timedelta(hours=TOKEN_EXPIRA_RESET_HORAS)).isoformat()
-        db.crear_token_reset(token, usuario["id"], expira_en)
-        mail.enviar_reset_password(email, usuario["nombre_usuario"], token, _base_url(request))
-        logger.info("Reset de contraseña solicitado: usuario_id=%s", usuario["id"])
+        enviar_token_reset(db, usuario, _base_url(request))
     # Mismo mensaje exista o no la cuenta: evita que este formulario se use
     # para averiguar qué correos están registrados.
     return render(request, "olvide-password.html.j2", {

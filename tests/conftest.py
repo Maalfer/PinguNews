@@ -7,6 +7,19 @@ from pingunews.config import cargar_config
 from pingunews.models import Item
 
 
+@pytest.fixture(autouse=True)
+def _ratelimit_limpio():
+    """El limitador de intentos (web/ratelimit.py) es estado global en memoria,
+    no por app/test: sin esto, los tests de un archivo pueden agotar el cupo
+    de intentos de registro/login y hacer fallar con 429 a los de otro."""
+    from pingunews.web import ratelimit
+    ratelimit._INTENTOS_RECIENTES.clear()
+    ratelimit._FALLOS_USUARIO.clear()
+    yield
+    ratelimit._INTENTOS_RECIENTES.clear()
+    ratelimit._FALLOS_USUARIO.clear()
+
+
 @pytest.fixture()
 def cliente(tmp_path, monkeypatch):
     """App real con una BD y un log temporales (no toca data/ ni logs/)."""

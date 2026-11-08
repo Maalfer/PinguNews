@@ -19,6 +19,13 @@ def get_ajustes(request: Request) -> AjustesPanel:
     return request.app.state.ajustes
 
 
+ROL_ADMIN = "admin"
+
+
+def es_admin(usuario: Optional[dict]) -> bool:
+    return bool(usuario and usuario.get("rol") == ROL_ADMIN)
+
+
 def usuario_actual(request: Request) -> Optional[dict]:
     usuario_id = request.session.get("usuario_id")
     if not usuario_id:

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usuarios registrados — PinguNews</title>
+{% include "_favicon.html.j2" %}
+{% include "_estilos.html.j2" %}
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  {% import "_macros.html.j2" as m %}
+  {{ m.sprite_iconos() }}
+
+  <header class="top">
+    <div class="inner">
+      <div class="brand-fila">
+        <div class="brand">
+          <picture><source type="image/webp" srcset="/static/logo-128.webp?v={{ static_v('logo-128.webp') }}"><img class="logo" src="/static/logo-128.png?v={{ static_v('logo-128.png') }}" alt="" width="64" height="64" fetchpriority="high" decoding="async"></picture>
+          <h1>👥 Usuarios registrados</h1>
+          <span class="subtitulo">{{ usuarios | length }} cuenta{{ 's' if usuarios | length != 1 else '' }}</span>
+        </div>
+        {{ m.auth_area(usuario, csrf_token) }}
+      </div>
+      <div class="volver-wrap"><a class="btn-ghost btn-volver" href="/">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Volver al panel
+      </a></div>
+    </div>
+  </header>
+
+  <main class="wrap" id="contenido" tabindex="-1">
+    {% if error %}<p class="auth-error" role="alert"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.4v.1"/></svg><span>{{ error }}</span></p>{% endif %}
+    {% if mensaje %}<p class="auth-exito" role="status"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg><span>{{ mensaje }}</span></p>{% endif %}
+
+    <div class="usuarios-grid">
+      {% for u in usuarios %}
+      <section class="perfil-card usuario-card" aria-labelledby="usuario-{{ u.id }}-h">
+        <div class="usuario-card-cabecera">
+          <h2 id="usuario-{{ u.id }}-h">
+            {{ u.nombre_usuario }}{% if u.id == usuario.id %} <span class="campo-ayuda">(tú)</span>{% endif %}
+          </h2>
+          <span class="rol-badge {{ 'rol-admin' if u.rol == 'admin' else 'rol-usuario' }}">{{ 'Admin' if u.rol == 'admin' else 'Usuario' }}</span>
+        </div>
+        <p class="campo-sub">
+          {{ u.email or 'Sin correo configurado' }}<br>
+          Registrado el {{ u.creado_en[:10] }}
+        </p>
+
+        {% if u.id != usuario.id %}
+        <details>
+          <summary>Acciones de administrador</summary>
+
+          <form method="post" action="/usuarios-registrados/{{ u.id }}/rol" class="accion-admin">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="rol_nuevo" value="{{ 'usuario' if u.rol == 'admin' else 'admin' }}">
+            <div class="campo">
+              <label for="rol-pass-{{ u.id }}">Tu contraseña, para {{ 'quitarle' if u.rol == 'admin' else 'darle' }} el rol admin</label>
+              <input type="password" id="rol-pass-{{ u.id }}" name="password_admin" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn">{{ 'Quitar rol admin' if u.rol == 'admin' else 'Hacer admin' }}</button>
+          </form>
+
+          <form method="post" action="/usuarios-registrados/{{ u.id }}/password" class="accion-admin">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="campo">
+              <label for="pwnueva-{{ u.id }}">Nueva contraseña para {{ u.nombre_usuario }}</label>
+              <input type="password" id="pwnueva-{{ u.id }}" name="password_nueva" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div class="campo">
+              <label for="pwnueva2-{{ u.id }}">Repite la contraseña</label>
+              <input type="password" id="pwnueva2-{{ u.id }}" name="password_nueva2" autocomplete="new-password" minlength="8" required>
+            </div>
+            <div class="campo">
+              <label for="pwadmin-{{ u.id }}">Tu contraseña</label>
+              <input type="password" id="pwadmin-{{ u.id }}" name="password_admin" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn">Cambiar su contraseña</button>
+          </form>
+
+          <form method="post" action="/usuarios-registrados/{{ u.id }}/enviar-reset" class="accion-admin">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="campo">
+              <label for="resetadmin-{{ u.id }}">Tu contraseña, para enviarle un correo de restablecimiento</label>
+              <input type="password" id="resetadmin-{{ u.id }}" name="password_admin" autocomplete="current-password" required{% if not u.email %} disabled{% endif %}>
+            </div>
+            <button type="submit" class="btn"{% if not u.email %} disabled title="Esta cuenta no tiene correo configurado"{% endif %}>Enviar correo de restablecimiento</button>
+          </form>
+        </details>
+        {% endif %}
+      </section>
+      {% endfor %}
+    </div>
+  </main>
+
+  {% include "_footer.html.j2" %}
+</body>
+</html>

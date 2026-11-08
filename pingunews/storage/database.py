@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS usuarios (
     -- sesión, así que subir este número cierra cualquier otra sesión abierta
     -- con la contraseña anterior sin necesidad de un almacén de sesiones.
     version_sesion INTEGER NOT NULL DEFAULT 1,
+    -- 'usuario' (por defecto, al registrarse) o 'admin'. Los admin pueden
+    -- ver /usuarios-registrados y actuar sobre otras cuentas (ver
+    -- routes/admin.py); no hay más roles por ahora.
+    rol TEXT NOT NULL DEFAULT 'usuario',
     creado_en TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS guardados (
@@ -110,6 +114,7 @@ COLUMNAS_MIGRABLES = {
     "usuarios": {
         "email": "TEXT",
         "version_sesion": "INTEGER NOT NULL DEFAULT 1",
+        "rol": "TEXT NOT NULL DEFAULT 'usuario'",
     },
 }
 
@@ -274,6 +279,17 @@ class Database:
             cur = conn.execute("SELECT * FROM usuarios WHERE email = ?", (email.lower(),))
             fila = cur.fetchone()
             return dict(fila) if fila else None
+
+    def listar_usuarios(self) -> List[dict]:
+        """Todas las cuentas, las más recientes primero (ver routes/admin.py)."""
+        with self._connect() as conn:
+            conn.row_factory = sqlite3.Row
+            cur = conn.execute("SELECT * FROM usuarios ORDER BY creado_en DESC")
+            return [dict(row) for row in cur.fetchall()]
+
+    def actualizar_rol(self, usuario_id: int, rol: str) -> None:
+        with self._connect() as conn:
+            conn.execute("UPDATE usuarios SET rol = ? WHERE id = ?", (rol, usuario_id))
 
     def actualizar_nombre_usuario(self, usuario_id: int, nombre_usuario: str) -> None:
         with self._connect() as conn:

@@ -795,6 +795,20 @@ padding: 20px 22px; margin-bottom: 18px; box-shadow: var(--shadow); max-width: 4
 .perfil-card .campo-sub { margin: 0 0 16px; color: var(--text-muted); font-size: 0.85rem; }
 .perfil-card .campo { margin-bottom: 12px; }
 .perfil-card .btn-primario { margin-top: 4px; }
+.usuarios-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+.usuario-card { max-width: none; }
+.usuario-card-cabecera { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.usuario-card-cabecera h2 { margin: 0; font-size: 1rem; }
+.rol-badge { font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.rol-admin { background: var(--accent); color: var(--accent-text); }
+.rol-usuario { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+.usuario-card summary { cursor: pointer; font-weight: 600; color: var(--accent); margin-top: 12px; }
+.usuario-card summary::-webkit-details-marker { display: none; }
+.usuario-card summary::marker { content: ""; }
+.accion-admin { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+.accion-admin .campo { margin-bottom: 8px; }
+.accion-admin .campo label { font-size: 0.8rem; }
+.accion-admin .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
 .auth-separador { display: flex; align-items: center; gap: 12px; margin: 22px 0 14px; color: var(--text-muted); font-size: 0.85rem; }
 .auth-separador::before, .auth-separador::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 .auth-escena .auth-enlace { margin: 0 0 10px; text-align: center; font-size: 0.92rem; color: var(--text-muted); }
