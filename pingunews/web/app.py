@@ -22,7 +22,7 @@ from pingunews.storage import Database
 from pingunews.web.ajustes import AjustesPanel
 from pingunews.web.estaticos import DIR_ESTATICOS, EstaticosConCache
 from pingunews.web.plantillas import crear_plantillas
-from pingunews.web.routes import cuentas, guardados, paginas, panel
+from pingunews.web.routes import cuentas, feed, guardados, paginas, panel
 from pingunews.web.seguridad import cabeceras_seguridad, obtener_secret_key
 
 SESION_MAX_AGE = 14 * 24 * 3600  # 14 días
@@ -59,7 +59,7 @@ def create_app(config: Optional[dict] = None) -> FastAPI:
     app.add_middleware(BaseHTTPMiddleware, dispatch=cabeceras_seguridad)
     app.add_exception_handler(StarletteHTTPException, error_http)
 
-    for modulo in (panel, cuentas, guardados, paginas):
+    for modulo in (panel, cuentas, guardados, paginas, feed):
         app.include_router(modulo.router)
     return app
 
