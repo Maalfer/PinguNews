@@ -16,7 +16,7 @@ Vista pública del panel (sin iniciar sesión). De arriba abajo:
 - **Categorías**: desplegable con las categorías activas (aquí "5 de 5 seleccionadas"): Ciberseguridad, Tendencias del sector, Empleo, Desarrollo/IT y Actualidad.
 - **↻ Actualizar ahora**: lanza una recolección de las fuentes RSS sin usar la terminal.
 - **Mascota y frase del día**: el pingüino, que reacciona al clic, y una frase motivadora (en la captura, de Fénelon) con botón para pedir otra y botón de pausa de las animaciones.
-- **🔥 Lo más comentado**: noticias cubiertas por **2 o más fuentes** a la vez (insignia "2 fuentes"), una señal gratuita de relevancia. Cada tarjeta muestra título, categoría, fuente, fecha y resumen.
+- **Lo más comentado**: noticias cubiertas por **2 o más fuentes** a la vez (insignia "2 fuentes"), una señal gratuita de relevancia. Cada tarjeta muestra título, categoría, fuente, fecha y resumen.
 
 ### Inicio de sesión
 ![Pantalla de inicio de sesión](docs/img/login.png)
